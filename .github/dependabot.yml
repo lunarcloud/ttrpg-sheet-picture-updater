@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Python dependencies (requirements.txt / requirements-dev.txt at repo root)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+
+  # GitHub Actions workflow versions (.github/workflows/*.yml)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
