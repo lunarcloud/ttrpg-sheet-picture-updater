@@ -3,12 +3,14 @@
 ## Environment
 - Python 3, dependencies managed via a project-local `.venv` — **never**
   install packages into the global/system Python.
-- Use `./setup.sh` to create `.venv` and install `requirements.txt`. Re-run
-  after editing `requirements.txt`. Linux/macOS only — no Windows support is
-  planned; Windows users should use Adobe Acrobat's own tools instead.
-- Runtime deps go in `requirements.txt`; build/test-only tools (e.g.
-  `pytest`, `pyinstaller`) go in `requirements-dev.txt`, kept separate so
-  end users installing the packaged app don't need them.
+- Use `./setup.sh` to create `.venv` and `pip install -e ".[dev]"` from
+  `pyproject.toml`. Re-run after editing `pyproject.toml`. Linux/macOS
+  only — no Windows support is planned; Windows users should use Adobe
+  Acrobat's own tools instead.
+- Runtime deps go in `pyproject.toml`'s `[project.dependencies]`;
+  build/test-only tools (e.g. `pytest`, `pyinstaller`) go in
+  `[project.optional-dependencies].dev`, kept separate so end users
+  installing the packaged app don't need them.
 
 ## Third-party IP — handle with care
 - Any real, copyrighted TTRPG publisher character sheet PDFs a developer
@@ -86,10 +88,10 @@
   handling (reading/writing AcroForm fields and building the `/MK/I` +
   `/AP/N` icon appearance so the portrait field stays a live, replaceable
   Button field), `Pillow` for image prep, stdlib `argparse` for the CLI.
-  `PyMuPDF` (`fitz`) is a **runtime** dependency (`requirements.txt`) used
+  `PyMuPDF` (`fitz`) is a **runtime** dependency (`pyproject.toml`) used
   by `gui.py` to render the sheet preview to an image — Qt's own
   `QtPdf`/`QPdfView` module does not render AcroForm field appearances
   (values or icons) at all, so it can't be used for previewing filled-in
   sheets. It's also used to author the synthetic test fixtures in
   `tests/fixtures/generate_fixtures.py`. Avoid adding new dependencies
-  without updating `requirements.txt`/`requirements-dev.txt`.
+  without updating `pyproject.toml`.

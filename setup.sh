@@ -11,9 +11,9 @@ if [ ! -d "$VENV_DIR" ]; then
     python3 -m venv "$VENV_DIR"
 fi
 
-echo "Installing dependencies from requirements.txt ..."
+echo "Installing project (editable) with dev dependencies from pyproject.toml ..."
 "$VENV_DIR/bin/python" -m pip install --upgrade pip
-"$VENV_DIR/bin/python" -m pip install -r "$SCRIPT_DIR/requirements.txt"
+"$VENV_DIR/bin/python" -m pip install -e "${SCRIPT_DIR}[dev]"
 
 echo
 echo "Setup complete. Activate the environment with:"

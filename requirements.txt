@@ -1,8 +1,0 @@
-pikepdf==10.11.0
-pillow==12.3.0
-PyQt6==6.11.0
-# Used by the GUI to render the sheet preview: Qt's own QtPdf/QPdfView
-# module doesn't render AcroForm field appearances (values or icons) at
-# all, so PyMuPDF renders each page to an image instead. Still dev-only
-# for tests/fixtures/generate_fixtures.py, but now also a runtime dep.
-pymupdf==1.28.0

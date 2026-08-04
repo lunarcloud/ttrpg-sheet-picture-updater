@@ -1,0 +1,56 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run CLI (set_ttrpg_portrait.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/set_ttrpg_portrait.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": "${input:pickArgs}"
+    },
+    {
+      "name": "Run GUI (set_ttrpg_portrait_gui.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/set_ttrpg_portrait_gui.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Run current file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Debug tests (pytest, all)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${workspaceFolder}/tests", "-v"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Debug tests (current file)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-v"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ],
+  "inputs": [
+    {
+      "id": "pickArgs",
+      "type": "promptString",
+      "description": "CLI args, e.g. examples/test.pdf examples/portrait.jpg -o /tmp/out.pdf",
+      "default": "--help"
+    }
+  ]
+}

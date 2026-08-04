@@ -51,7 +51,7 @@ jobs:
         run: |
           python -m venv .venv
           .venv/bin/pip install --upgrade pip
-          .venv/bin/pip install -r requirements.txt -r requirements-dev.txt
+          .venv/bin/pip install -e ".[dev]"
 
       - name: Fetch packaging tools (nfpm, appimagetool)
         run: |

@@ -5,8 +5,8 @@ PyInstaller-frozen binary, so end users don't need Python/pip installed.
 
 ## Build-time tools (not needed by end users)
 
-- **PyInstaller** — already in `requirements-dev.txt`, installed by
-  `./setup.sh`.
+- **PyInstaller** — already an optional `dev` dependency in
+  `pyproject.toml`, installed by `./setup.sh`.
 - **[`nfpm`](https://nfpm.goreleaser.com/)** — required by
   `build-deb.sh`/`build-rpm.sh`. A single static Go binary, no
   interpreter/package-manager dependency. Builds both `.deb` and `.rpm`
