@@ -131,12 +131,19 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
 3. `./lint.sh` — lints Python with `ruff check`. Use `./lint.sh --fix` to
    auto-apply safe fixes.
 
-4. Run the test suite: `.venv/bin/python -m pytest tests/`.
+4. `./package-updates.sh` — checks pinned dependency versions for updates:
+   the pip packages in `pyproject.toml` (also covered automatically, on a
+   monthly cadence, by Dependabot — see `.github/dependabot.yml`) plus the
+   `nfpm`/`appimagetool` build tools in `packaging/lib/fetch-tools.sh`,
+   which Dependabot can't see since they're plain bash variables, not a
+   manifest file. Add `--update` to rewrite outdated pins in place.
 
-5. Regenerate synthetic test fixtures after changing `tests/fixtures/`
+5. Run the test suite: `.venv/bin/python -m pytest tests/`.
+
+6. Regenerate synthetic test fixtures after changing `tests/fixtures/`
    generation logic: `.venv/bin/python tests/fixtures/generate_fixtures.py`.
    
-6. All automated tests use the synthetic, IP-free fixtures under
+7. All automated tests use the synthetic, IP-free fixtures under
    `tests/fixtures/` — never commit or reference any real, copyrighted
    third-party character sheet PDFs anywhere in this repo or CI.
 

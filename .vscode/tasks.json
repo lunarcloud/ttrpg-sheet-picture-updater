@@ -30,6 +30,12 @@
       "group": "build"
     },
     {
+      "label": "Check for outdated dependencies",
+      "type": "shell",
+      "command": "${workspaceFolder}/package-updates.sh",
+      "problemMatcher": []
+    },
+    {
       "label": "Test: pytest",
       "type": "shell",
       "command": "${workspaceFolder}/.venv/bin/python",
@@ -55,6 +61,7 @@
         "${workspaceFolder}/run.sh",
         "${workspaceFolder}/format.sh",
         "${workspaceFolder}/lint.sh",
+        "${workspaceFolder}/package-updates.sh",
         "${workspaceFolder}/packaging/build-all.sh",
         "${workspaceFolder}/packaging/build-deb.sh",
         "${workspaceFolder}/packaging/build-rpm.sh",

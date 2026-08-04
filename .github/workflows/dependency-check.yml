@@ -1,0 +1,64 @@
+name: Dependency check
+
+# Runs ./package-updates.sh on a low-noise half-yearly cadence to catch
+# pins Dependabot can't (see package-updates.sh's header comment for why:
+# the manually-pinned NFPM_VERSION in packaging/lib/fetch-tools.sh, and
+# appimagetool's locally-cached "continuous" build going stale). Pip and
+# GitHub Actions versions are already covered automatically and more
+# frequently by Dependabot (.github/dependabot.yml) — this is a backstop,
+# not a replacement.
+#
+# Opens (or comments on) a single tracking issue when something's outdated,
+# and closes it again once everything's back up to date, instead of
+# silently failing a run nobody would otherwise notice.
+on:
+  schedule:
+    - cron: "0 6 1 1,7 *" # 06:00 UTC on Jan 1st and Jul 1st
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+env:
+  TRACKING_ISSUE_TITLE: "Manual dependency check: pins need updating"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run package-updates.sh
+        id: check
+        run: |
+          set +e
+          ./package-updates.sh > /tmp/package-updates-output.txt 2>&1
+          cat /tmp/package-updates-output.txt
+          if grep -q "Everything is up to date." /tmp/package-updates-output.txt; then
+            echo "outdated=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "outdated=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update tracking issue
+        if: steps.check.outputs.outdated == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing="$(gh issue list --state open --search "in:title \"$TRACKING_ISSUE_TITLE\"" --json number --jq '.[0].number')"
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh issue comment "$existing" --body-file /tmp/package-updates-output.txt
+          else
+            gh issue create --title "$TRACKING_ISSUE_TITLE" --body-file /tmp/package-updates-output.txt
+          fi
+
+      - name: Close tracking issue if resolved
+        if: steps.check.outputs.outdated == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing="$(gh issue list --state open --search "in:title \"$TRACKING_ISSUE_TITLE\"" --json number --jq '.[0].number')"
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh issue close "$existing" --comment "All manually-tracked pins are up to date again."
+          fi
