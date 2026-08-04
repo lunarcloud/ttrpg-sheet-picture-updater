@@ -63,10 +63,17 @@ up to date as the source of truth when the approach changes.
   for full detail.
 
 ## Project artwork — human-only
-- Project artwork/branding (e.g. the AppImage/desktop icon under
-  `packaging/appimage/icon.png`, or any future logo/branding asset) must
-  only be created or edited by a human — **do not generate or modify these
-  as an AI**.
+- Project artwork/branding (e.g. the single master app icon at
+  `packaging/icon/icon-source.png`, from which every packaging icon
+  size/format is derived — see "Distribution / Packaging" in `plan.md` —
+  or any future logo/branding asset) must only be created or edited by a
+  human — **do not generate or modify these as an AI**.
+- Until a human provides real artwork, `icon-source.png` is a
+  programmatically-generated **placeholder** showing safe-zone guides
+  (border, crop-safe circle, crosshairs, "REPLACE WITH ARTWORK" label) —
+  regenerating that placeholder via its generator script is fine for an AI
+  to do, since it's a guide, not final artwork; do not hand-edit it into
+  something resembling real branding.
 - AI-generated imagery is fine for **test fixtures only**: simple
   programmatically-drawn shapes/gradients/patterns (e.g.
   `tests/fixtures/portrait.jpg`) used purely to exercise the image-handling
@@ -80,8 +87,14 @@ up to date as the source of truth when the approach changes.
   user first** — never silently blow away someone's in-progress work.
 
 ## General conventions
-- Keep the CLI (`update_portrait.py`) dependency-light: `PyMuPDF` for PDF
-  handling, `Pillow` for image prep, stdlib `argparse` for the CLI — avoid
-  adding new dependencies without updating `plan.md` and `requirements.txt`.
+- Keep the CLI (`update_portrait.py`) dependency-light: `pikepdf` for PDF
+  handling (reading/writing AcroForm fields and building the `/MK/I` +
+  `/AP/N` icon appearance so the portrait field stays a live, replaceable
+  Button field — see "Research findings" in `plan.md`), `Pillow` for image
+  prep, stdlib `argparse` for the CLI. `PyMuPDF` (`fitz`) is a **dev-only**
+  dependency (`requirements-dev.txt`), used only to author the synthetic
+  test fixtures in `tests/fixtures/generate_fixtures.py` — it is not used
+  by the shipped tool at runtime. Avoid adding new dependencies without
+  updating `plan.md` and `requirements.txt`/`requirements-dev.txt`.
 - Prefer updating `plan.md` alongside any significant design change so it
   stays an accurate record of intended architecture.

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Update Portrait
+Comment=Embed a portrait image into a fillable TTRPG character sheet PDF
+Exec=update-portrait
+Icon=update-portrait
+Categories=Utility;Office;
+Terminal=true

@@ -1,0 +1,42 @@
+# Shared nfpm package definition — one config produces both the .deb and
+# .rpm via `nfpm package --packager deb|rpm`. See "Distribution / Packaging"
+# in ../plan.md. Content paths are read from the staged directory built by
+# lib/stage-files.sh (passed in via the STAGE_DIR env var).
+name: update-portrait
+version: ${VERSION}
+arch: amd64
+platform: linux
+section: utils
+priority: optional
+maintainer: lunarcloud
+description: Embed a portrait image into a fillable TTRPG character sheet PDF.
+homepage: https://github.com/lunarcloud/ttrpg-sheet-picture-updater
+license: MIT
+
+contents:
+  - src: ${STAGE_DIR}/usr/bin/update-portrait
+    dst: /usr/bin/update-portrait
+    file_info:
+      mode: 0755
+
+  - src: ${STAGE_DIR}/usr/share/applications/update-portrait.desktop
+    dst: /usr/share/applications/update-portrait.desktop
+
+  - src: ${STAGE_DIR}/usr/share/doc/update-portrait/README.md
+    dst: /usr/share/doc/update-portrait/README.md
+
+  - src: ${STAGE_DIR}/usr/share/doc/update-portrait/LICENSE
+    dst: /usr/share/doc/update-portrait/LICENSE
+
+  - src: ${STAGE_DIR}/usr/share/icons/hicolor/16x16/apps/update-portrait.png
+    dst: /usr/share/icons/hicolor/16x16/apps/update-portrait.png
+  - src: ${STAGE_DIR}/usr/share/icons/hicolor/32x32/apps/update-portrait.png
+    dst: /usr/share/icons/hicolor/32x32/apps/update-portrait.png
+  - src: ${STAGE_DIR}/usr/share/icons/hicolor/48x48/apps/update-portrait.png
+    dst: /usr/share/icons/hicolor/48x48/apps/update-portrait.png
+  - src: ${STAGE_DIR}/usr/share/icons/hicolor/64x64/apps/update-portrait.png
+    dst: /usr/share/icons/hicolor/64x64/apps/update-portrait.png
+  - src: ${STAGE_DIR}/usr/share/icons/hicolor/128x128/apps/update-portrait.png
+    dst: /usr/share/icons/hicolor/128x128/apps/update-portrait.png
+  - src: ${STAGE_DIR}/usr/share/icons/hicolor/256x256/apps/update-portrait.png
+    dst: /usr/share/icons/hicolor/256x256/apps/update-portrait.png

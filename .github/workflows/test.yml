@@ -1,0 +1,38 @@
+name: Test
+
+# Runs the formatter check + pytest suite against our own IP-free synthetic
+# fixtures only (tests/fixtures/). Never depends on examples/ (real,
+# copyrighted third-party sheets) — see .github/copilot-instructions.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Create venv and install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Check formatting (black + isort)
+        run: ./format.sh --check
+
+      - name: Lint shell scripts (shellcheck)
+        run: shellcheck --severity=warning $(find . -name "*.sh" -not -path "./.venv/*" -not -path "./build/*" -not -path "./dist/*")
+
+      - name: Regenerate test fixtures
+        run: .venv/bin/python tests/fixtures/generate_fixtures.py
+
+      - name: Run pytest
+        run: .venv/bin/python -m pytest tests/ -v
