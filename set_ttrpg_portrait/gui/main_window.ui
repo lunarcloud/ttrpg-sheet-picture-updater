@@ -18,8 +18,26 @@ by opening it in Qt Designer/`pyuic6`'s companion tool `designer`.
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="rootLayout" stretch="0,0,0,0,1">
+    <property name="leftMargin">
+     <number>12</number>
+    </property>
+    <property name="topMargin">
+     <number>12</number>
+    </property>
+    <property name="rightMargin">
+     <number>12</number>
+    </property>
+    <property name="bottomMargin">
+     <number>12</number>
+    </property>
+    <property name="spacing">
+     <number>10</number>
+    </property>
     <item>
      <layout class="QHBoxLayout" name="sheetRow" stretch="0,1,0,0">
+      <property name="spacing">
+       <number>8</number>
+      </property>
       <item>
        <widget class="QLabel" name="sheetRowLabel">
         <property name="text">
@@ -52,6 +70,9 @@ by opening it in Qt Designer/`pyuic6`'s companion tool `designer`.
     </item>
     <item>
      <layout class="QHBoxLayout" name="portraitRow" stretch="0,1,0,0">
+      <property name="spacing">
+       <number>8</number>
+      </property>
       <item>
        <widget class="QLabel" name="portraitRowLabel">
         <property name="text">
@@ -84,6 +105,9 @@ by opening it in Qt Designer/`pyuic6`'s companion tool `designer`.
     </item>
     <item>
      <layout class="QHBoxLayout" name="buttonsRow">
+      <property name="spacing">
+       <number>8</number>
+      </property>
       <item>
        <widget class="QPushButton" name="save_button">
         <property name="enabled">
