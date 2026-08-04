@@ -51,6 +51,12 @@ version = { file = "VERSION" }
 [tool.setuptools.packages.find]
 include = ["set_ttrpg_portrait*"]
 
+[tool.setuptools.package-data]
+# Qt Designer form loaded at runtime by set_ttrpg_portrait/gui/main_window.py
+# — not Python source, so it needs an explicit package-data entry to be
+# included in non-editable installs/wheels.
+"set_ttrpg_portrait.gui" = ["*.ui"]
+
 [tool.isort]
 profile = "black"
 

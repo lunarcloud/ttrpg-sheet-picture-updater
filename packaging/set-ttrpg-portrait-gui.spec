@@ -21,10 +21,19 @@ a = Analysis(
     [str(REPO_ROOT / "set_ttrpg_portrait_gui.py")],
     pathex=[str(REPO_ROOT)],
     binaries=[],
-    # Bundles the single committed source icon so gui.py's _app_icon() has
-    # a fallback window icon when the installed icon theme entry isn't
-    # found (see gui.py's _bundled_icon_path()).
-    datas=[(str(REPO_ROOT / "packaging" / "icon" / "icon-source.png"), ".")],
+    # Bundles the single committed source icon so gui/icon.py's app_icon()
+    # has a fallback window icon when the installed icon theme entry isn't
+    # found (see gui/icon.py's bundled_icon_path()), plus the Qt Designer
+    # `.ui` form gui/main_window.py loads at runtime (kept as a separate,
+    # non-Python data file rather than compiled in, so the layout can
+    # still be edited/reloaded independently of the logic).
+    datas=[
+        (str(REPO_ROOT / "packaging" / "icon" / "icon-source.png"), "."),
+        (
+            str(REPO_ROOT / "set_ttrpg_portrait" / "gui" / "main_window.ui"),
+            "set_ttrpg_portrait/gui",
+        ),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

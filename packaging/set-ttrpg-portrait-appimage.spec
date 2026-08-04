@@ -22,11 +22,18 @@ a = Analysis(
     [str(REPO_ROOT / "set_ttrpg_portrait_launcher.py")],
     pathex=[str(REPO_ROOT)],
     binaries=[],
-    # Bundles the single committed source icon so gui.py's _app_icon() has
-    # a fallback window icon when no installed icon theme entry is found
-    # (see gui.py's _bundled_icon_path()) — the AppImage has no system-wide
-    # icon theme registration of its own.
-    datas=[(str(REPO_ROOT / "packaging" / "icon" / "icon-source.png"), ".")],
+    # Bundles the single committed source icon so gui/icon.py's app_icon()
+    # has a fallback window icon when no installed icon theme entry is
+    # found (see gui/icon.py's bundled_icon_path()) — the AppImage has no
+    # system-wide icon theme registration of its own — plus the Qt
+    # Designer `.ui` form gui/main_window.py loads at runtime.
+    datas=[
+        (str(REPO_ROOT / "packaging" / "icon" / "icon-source.png"), "."),
+        (
+            str(REPO_ROOT / "set_ttrpg_portrait" / "gui" / "main_window.ui"),
+            "set_ttrpg_portrait/gui",
+        ),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
