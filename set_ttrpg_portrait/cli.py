@@ -13,7 +13,11 @@ import sys
 from set_ttrpg_portrait import __version__
 from set_ttrpg_portrait.errors import SetTtrpgPortraitError
 from set_ttrpg_portrait.fields import find_button_fields, find_portrait_field
-from set_ttrpg_portrait.image_prep import prepare_portrait_jpeg
+from set_ttrpg_portrait.image_prep import (
+    DEFAULT_ICON_DPI,
+    points_to_pixels,
+    prepare_portrait_jpeg,
+)
 from set_ttrpg_portrait.pdf_ops import open_sheet, save_sheet, set_field_icon
 
 
@@ -52,6 +56,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=("cover", "contain"),
         default="cover",
         help="How to fit the portrait into the field's rectangle (default: cover).",
+    )
+    parser.add_argument(
+        "--dpi",
+        type=float,
+        default=DEFAULT_ICON_DPI,
+        help=(
+            "Resolution (dots per inch) to embed the portrait at, oversampling "
+            "the field's on-page size in points so the icon stays sharp when "
+            f"zoomed or printed, not just on-screen at 72 DPI (default: {DEFAULT_ICON_DPI:g})."
+        ),
     )
     parser.add_argument(
         "--list-fields",
@@ -100,9 +114,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         candidate = find_portrait_field(pdf, args.field, args.page)
         rect = candidate.locations[0].rect
+        rect_points = (rect[2] - rect[0], rect[3] - rect[1])
         portrait_bytes = prepare_portrait_jpeg(
             args.portrait,
-            target_size=(rect[2] - rect[0], rect[3] - rect[1]),
+            target_size=points_to_pixels(rect_points, dpi=args.dpi),
             mode=args.fit,
         )
         set_field_icon(pdf, candidate, portrait_bytes)

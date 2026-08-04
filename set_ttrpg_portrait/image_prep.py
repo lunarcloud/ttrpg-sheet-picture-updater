@@ -12,14 +12,48 @@ import io
 from PIL import Image, ImageOps
 
 #: Default JPEG quality used when re-encoding the fitted portrait for
-#: embedding into the sheet.
-JPEG_QUALITY = 90
+#: embedding into the sheet. Adobe Acrobat's own "Select Icon" feature
+#: embeds icons at quality 100 with no chroma subsampling (4:4:4) — using
+#: the same here keeps sharp edges/text in the portrait (e.g. faction
+#: symbols, line art) crisp instead of visibly softened by 4:2:0 color
+#: blur, matching that reference output.
+JPEG_QUALITY = 100
+
+#: Chroma subsampling mode passed to Pillow's JPEG encoder: 0 = 4:4:4 (no
+#: chroma downsampling). Pillow's default (4:2:0) halves color resolution,
+#: which noticeably blurs saturated color edges compared to Acrobat's
+#: output.
+JPEG_SUBSAMPLING = 0
 
 #: Background color used to flatten transparent images (JPEG has no alpha
 #: channel), and to letterbox "contain"-fit images.
 WHITE_BACKGROUND = (255, 255, 255)
 
+#: PDF page geometry (field ``/Rect`` values) is in points (1/72 inch).
+#: Fitting the portrait to that pixel-for-point size would embed a
+#: postage-stamp-resolution image (e.g. ~137x151px for a typical portrait
+#: field) that looks visibly soft/blurry once zoomed in or printed —
+#: noticeably softer than Adobe Acrobat's own "Select Icon" output, which
+#: embeds the icon at a much higher pixel density than the on-page
+#: rectangle and scales it down for display. Oversampling to this DPI
+#: before fitting keeps the embedded icon sharp at zoom/print time; the
+#: PDF appearance stream still scales it down to the exact field size, so
+#: on-screen layout is unaffected.
+DEFAULT_ICON_DPI = 300
+
+#: Points per inch, per the PDF spec (used to convert a field's ``/Rect``
+#: size in points to a target pixel size at a given DPI).
+POINTS_PER_INCH = 72.0
+
 FitMode = str  # "cover" or "contain"
+
+
+def points_to_pixels(
+    points: tuple[float, float], dpi: float = DEFAULT_ICON_DPI
+) -> tuple[float, float]:
+    """Convert a ``(width, height)`` pair in PDF points to pixels at ``dpi``."""
+    scale = dpi / POINTS_PER_INCH
+    return (points[0] * scale, points[1] * scale)
 
 
 def load_portrait(path: str) -> Image.Image:
@@ -87,7 +121,7 @@ def fit_image(
 def image_to_jpeg_bytes(image: Image.Image, quality: int = JPEG_QUALITY) -> bytes:
     """Encode ``image`` as JPEG bytes suitable for embedding into a PDF page."""
     buffer = io.BytesIO()
-    image.save(buffer, format="JPEG", quality=quality)
+    image.save(buffer, format="JPEG", quality=quality, subsampling=JPEG_SUBSAMPLING)
     return buffer.getvalue()
 
 
