@@ -71,7 +71,10 @@ jobs:
       - name: Verify VERSION matches the release tag
         run: |
           version="$(tr -d ' \t\n\r' < VERSION)"
-          tag="${GITHUB_REF_NAME#v}"
+          # Tags are named "release/1.2.3" (optionally "v1.2.3" or a bare
+          # "1.2.3"); strip whichever prefix is present to get the version.
+          tag="${GITHUB_REF_NAME#release/}"
+          tag="${tag#v}"
           if [ "$version" != "$tag" ]; then
             echo "::warning::VERSION file ($version) does not match release tag ($GITHUB_REF_NAME) — attaching packages anyway."
           fi
