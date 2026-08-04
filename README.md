@@ -19,7 +19,15 @@ install it:
 sudo apt install ./set-ttrpg-portrait_<version>_amd64.deb   # Debian/Ubuntu
 sudo rpm -i set-ttrpg-portrait-<version>-1.x86_64.rpm       # Fedora/RHEL
 chmod +x set-ttrpg-portrait-<version>-x86_64.AppImage       # AppImage (any distro)
+```
+The `.deb`/`.rpm` install two separate commands — the CLI
+(`set-ttrpg-portrait`) and the GUI (`set-ttrpg-portrait-gui`, also added to
+your desktop's application menu). The AppImage bundles both in one
+executable: double-click it (or run it with no arguments) for the GUI, or
+pass it CLI arguments from a terminal:
+```
 ./set-ttrpg-portrait-<version>-x86_64.AppImage --help
+./set-ttrpg-portrait-<version>-x86_64.AppImage SHEET.pdf PORTRAIT.jpg -o OUTPUT.pdf
 ```
 
 ### Option 2: Run from source (Python 3)
@@ -32,7 +40,34 @@ source .venv/bin/activate
 python set_ttrpg_portrait.py --help
 ```
 
-## Usage
+Alternatively, skip activating the venv yourself and use `./run.sh`, which
+runs `./setup.sh` automatically the first time, then always uses the
+project's own `.venv` Python:
+```
+./run.sh                                        # no args -> launches the GUI
+./run.sh SHEET.pdf PORTRAIT.jpg -o OUTPUT.pdf    # any args -> behaves like the CLI
+```
+
+## GUI
+
+Launch it with `set-ttrpg-portrait-gui` (packaged install), `./run.sh`
+(from source), or `python set_ttrpg_portrait_gui.py` (from an activated
+`.venv`).
+
+- Pick a **Sheet (PDF)** and a **Portrait (image)** via the Browse…
+  buttons, or just drag and drop files onto their fields — you can also
+  drop a file straight onto the preview area, which sorts it by type
+  (a `.pdf` becomes the sheet, an image becomes the portrait).
+- Once both are set, the portrait is embedded automatically and previewed
+  inline — no separate "Process" button, and it re-runs automatically
+  whenever either input changes.
+- If the sheet has more than one image field, a picker lets you choose
+  which one to use; **Change Field…** reopens that same picker afterwards
+  to try a different candidate without reselecting either file.
+- **Save As…** writes the previewed result to a permanent location (the
+  preview itself is a throwaway temp copy, cleaned up on exit).
+
+## CLI usage
 
 ```
 python set_ttrpg_portrait.py SHEET.pdf PORTRAIT.jpg -o OUTPUT.pdf
@@ -53,6 +88,9 @@ python set_ttrpg_portrait.py SHEET.pdf PORTRAIT.jpg -o OUTPUT.pdf
 - `--fit {cover,contain}` — how the portrait is scaled into the field's
   rectangle (default `cover`, which crops to fill; `contain` letterboxes
   onto white instead of cropping).
+- `--dpi DPI` — resolution (dots per inch) to embed the portrait at,
+  oversampling the field's on-page size so the icon stays sharp when
+  zoomed in or printed, not just on-screen at 72 DPI (default: `300`).
 - `--list-fields` — print every candidate pushbutton field found on the
   sheet (name, page, size) and exit, without writing an output file. Useful
   for finding the right `--field` value.

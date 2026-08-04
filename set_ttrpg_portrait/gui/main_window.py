@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 
 from PyQt6 import uic
-from PyQt6.QtCore import QThread
+from PyQt6.QtCore import QEvent, QObject, QThread
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox
 
@@ -28,6 +28,13 @@ _TEMP_SUFFIX = ".set-ttrpg-portrait-preview.pdf"
 
 #: Qt Designer form filename, loaded at runtime (see module docstring).
 _UI_FILENAME = "main_window.ui"
+
+#: Extension used to recognize a dropped fillable sheet.
+_SHEET_EXTENSION = ".pdf"
+
+#: Extensions accepted as a dropped/browsed portrait image (matches the
+#: `_browse_portrait()` file-picker filter below).
+_PORTRAIT_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tiff"}
 
 
 def _ui_file_path() -> Path:
@@ -82,15 +89,84 @@ class MainWindow(QMainWindow):
         self.save_button.clicked.connect(self._save_as)
         self.change_field_button.clicked.connect(self._change_field)
 
+        # Accept dropped files on the two path fields, and on the preview
+        # (sorted by extension: a dropped PDF becomes the sheet, a dropped
+        # image becomes the portrait — see `_handle_drop()`).
+        self._drop_targets = (
+            self.sheet_line_edit,
+            self.portrait_line_edit,
+            self.preview_scroll_area,
+            self.preview_label,
+        )
+        for widget in self._drop_targets:
+            widget.setAcceptDrops(True)
+            widget.installEventFilter(self)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802
+        """Handle drag-and-drop of files onto the path fields and preview.
+
+        Installed on `self._drop_targets` in `__init__()` rather than
+        overriding `dragEnterEvent()`/`dropEvent()` on each widget's own
+        class, since those are plain stock Qt widgets (`QLineEdit`,
+        `QScrollArea`, `QLabel`) loaded from the `.ui` form.
+        """
+        if obj in self._drop_targets:
+            if event.type() in (QEvent.Type.DragEnter, QEvent.Type.DragMove):
+                if event.mimeData().hasUrls():
+                    event.acceptProposedAction()
+                    return True
+            elif event.type() == QEvent.Type.Drop:
+                if self._handle_drop(obj, event):
+                    event.acceptProposedAction()
+                    return True
+        return super().eventFilter(obj, event)
+
+    def _handle_drop(self, target: QObject, event: QEvent) -> bool:
+        """Route a dropped file to the sheet or portrait input.
+
+        The two path fields only accept their own file type; the preview
+        (which stands in for both) sorts by extension so a dropped PDF
+        always becomes the sheet and a dropped image always becomes the
+        portrait, regardless of which one is currently loaded.
+        """
+        urls = event.mimeData().urls()
+        if not urls or not urls[0].isLocalFile():
+            return False
+        path = urls[0].toLocalFile()
+        suffix = Path(path).suffix.lower()
+
+        if target is self.sheet_line_edit:
+            accepts_sheet, accepts_portrait = True, False
+        elif target is self.portrait_line_edit:
+            accepts_sheet, accepts_portrait = False, True
+        else:  # dropped onto the preview — sort by file type
+            accepts_sheet, accepts_portrait = True, True
+
+        if accepts_sheet and suffix == _SHEET_EXTENSION:
+            self._set_sheet(path)
+            return True
+        if accepts_portrait and suffix in _PORTRAIT_EXTENSIONS:
+            self._set_portrait(path)
+            return True
+        return False
+
+    def _set_sheet(self, path: str) -> None:
+        self._sheet_path = path
+        self.sheet_line_edit.setText(path)
+        self._reset_field_choice()
+        self._maybe_auto_process()
+
+    def _set_portrait(self, path: str) -> None:
+        self._portrait_path = path
+        self.portrait_line_edit.setText(path)
+        self._maybe_auto_process()
+
     def _browse_sheet(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self, "Select fillable PDF sheet", "", "PDF files (*.pdf)"
         )
         if path:
-            self._sheet_path = path
-            self.sheet_line_edit.setText(path)
-            self._reset_field_choice()
-            self._maybe_auto_process()
+            self._set_sheet(path)
 
     def _browse_portrait(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -100,9 +176,7 @@ class MainWindow(QMainWindow):
             "Images (*.jpg *.jpeg *.png *.webp *.bmp *.gif *.tiff)",
         )
         if path:
-            self._portrait_path = path
-            self.portrait_line_edit.setText(path)
-            self._maybe_auto_process()
+            self._set_portrait(path)
 
     def _clear_sheet(self) -> None:
         self._sheet_path = None
