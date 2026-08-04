@@ -2,3 +2,4 @@ pytest
 pyinstaller
 black==26.5.1
 isort==8.0.1
+pymupdf==1.28.0

@@ -18,30 +18,74 @@ Inspected the four sample sheets with `pdftk ... dump_data_fields`:
 | `ION_HEART_Character_Sheet_Digital.pdf` | *(none found)* | n/a — no image field, out of scope for auto-detect |
 
 Key insight: portrait placeholders in these Acrobat-authored sheets are
-**pushbutton form fields** whose "icon" is normally set via Acrobc's
+**pushbutton form fields** whose "icon" is normally set via Acrobat's
 "Select Icon" UI — there is no plain image/XObject field type in AcroForms.
-`pypdf` has no ergonomic API for setting a button icon appearance stream.
-`PyMuPDF` (`fitz`) can read widget rects/names easily, and — pragmatically —
-we can simply draw the portrait image directly onto the page at the widget's
-rectangle and then remove/flatten that one widget, so the image is baked in
-permanently while every other form field remains fillable. This avoids
-hand-building PDF appearance streams and is robust across the varied sheets.
 
-Verified in a scratch venv: `pymupdf==1.28.0`, `pypdf==6.14.2`, `pillow==12.3.0`
-all install and import cleanly.
+**Confirmed by inspecting the user's own real, human-produced example
+outputs in `examples/outputs/`**: those PDFs keep the portrait field as a
+live `FieldType: Button` (per `pdftk`) after the image is set — i.e. the
+field stays clickable/replaceable later in Acrobat, it is *not* flattened
+into the page and discarded. The exact object structure Acrobat uses:
+- `/MK/I` on the widget → a Form XObject ("FRM") that draws the raw image
+  (`/Im0`, `/Filter /DCTDecode`, i.e. plain embedded JPEG bytes) at its
+  native pixel size.
+- `/AP/N` on the widget → a second Form XObject that clips to the widget's
+  `/Rect` size and scales the icon (`FRM`) to fit via a `cm` matrix.
+- Some fields are "merged" (the field dict *is* the one widget annotation,
+  with its own `/Rect`); others use `/Kids` (a list of separate widget
+  annotation dicts — e.g. the D&D sheet's `CHARACTER IMAGE` field has 3
+  identical-`/Rect` kids). Both shapes must be supported.
+
+This ruled out the initial plan (flatten the portrait into page content via
+`PyMuPDF`/`fitz` and delete the widget) — that produced a *visually*
+correct but *structurally* wrong result (no more `Button` field, unlike the
+user's real examples) and hit a `fitz` gotcha along the way: a `Widget`
+object holds only a weak reference to its parent `Page`; letting that
+`Page` wrapper fall out of scope invalidates the widget with a
+`ReferenceError`/`FzErrorArgument` deep inside `page.delete_widget()`.
+
+**`PyMuPDF` has no ergonomic API for setting a button's icon appearance
+stream**, and hand-building the required PDF object graph via `fitz`'s
+low-level `xref_object`/`update_object` (raw PDF syntax as Python strings)
+is fragile and error-prone. **`pikepdf`** (built on `qpdf`) exposes the
+same low-level object graph through proper Pythonic `Dictionary`/
+`Array`/`Stream` objects instead of hand-written PDF syntax strings, and a
+prototype (see below) reproduced Acrobat's exact `/MK`/`/AP` structure
+cleanly. `pikepdf` is therefore the actual PDF-editing library for this
+tool; `pypdf` was considered too (no ergonomic button-icon API either).
+
+Verified in a scratch venv: `pikepdf==10.11.0` and `pillow==12.3.0` install
+and import cleanly, and a hand-built `/MK/I` + `/AP/N` icon (JPEG bytes as
+a `DCTDecode` Image XObject wrapped in two Form XObjects) rendered
+correctly with `pdftoppm` and still reported as `FieldType: Button` via
+`pdftk` afterwards — matching the real reference outputs exactly.
+
+`PyMuPDF` (`fitz==1.28.0`) remains useful as a **dev-only** dependency for
+quickly authoring the synthetic test-fixture PDFs (`page.add_widget(...)`
+is a convenient way to build a fillable PDF from scratch) — see
+`requirements-dev.txt`. It is not used by the shipped tool at runtime.
 
 ## Tooling decisions
 - **Language:** Python 3.
 - **Env:** project-local `.venv` + `requirements.txt` (already created:
-  `pymupdf`, `pillow`). Do **not** install into global site-packages.
+  `pikepdf`, `pillow`). Do **not** install into global site-packages.
   `setup.sh` creates `.venv` and installs `requirements.txt` into it. Tested
   to run cleanly from a clean checkout. **Linux/macOS only** — Windows users
   should use Adobe Acrobat's own tools to set portrait/image button icons
   instead of this script.
-- **PDF library:** `PyMuPDF` (`fitz`) — widget introspection + image
-  insertion + page rendering, all in one dependency.
+- **PDF library:** `pikepdf` — reads/writes the AcroForm field tree
+  (including `/Kids`), and builds the `/MK/I` + `/AP/N` icon object graph
+  described above, keeping every field (including the portrait field
+  itself) live and fillable in the output. `PyMuPDF` is a dev-only
+  dependency, used only to author test fixtures (see Testing plan).
 - **Image library:** `Pillow` — EXIF-orientation fix, format normalization
-  (any input → JPEG/PNG bytes fitz can embed), aspect-fit/cover cropping.
+  (any input → JPEG bytes embeddable as a `DCTDecode` Image XObject),
+  aspect-fit/cover cropping, and **compositing transparent images onto an
+  opaque white background** (JPEG/DCTDecode has no alpha channel, and a
+  naive `.convert("RGB")` on an RGBA image does *not* properly blend
+  toward white — it can leave garbage-colored pixels showing through fully
+  or partially transparent regions). See Testing plan for the dedicated
+  transparent-PNG fixture/test covering this.
 - **CLI:** stdlib `argparse`, no extra framework needed.
 - **Formatting:** `black` + `isort`, pinned in `requirements-dev.txt`
   (`black==26.5.1`, `isort==8.0.1`). Run via `./format.sh` to auto-fix;
@@ -60,9 +104,9 @@ update_portrait/                # importable package, not a junk-drawer script
   __init__.py                   # re-exports the public API + __version__
   __main__.py                   # `python -m update_portrait ...`
   cli.py                        # argparse setup + main(); thin, no business logic
-  fields.py                     # widget discovery/heuristic-matching logic
-  image_prep.py                 # Pillow-based EXIF/resize/fit logic
-  pdf_ops.py                     # fitz calls: open, insert_image, delete_widget, save
+  fields.py                     # AcroForm field discovery/heuristic-matching logic
+  image_prep.py                 # Pillow-based EXIF/resize/fit/flatten-alpha logic
+  pdf_ops.py                     # pikepdf calls: open, build icon XObjects, save
   errors.py                     # small custom exception types (NoFieldFound, AmbiguousField, ...)
 update_portrait.py               # thin repo-root shim: `from update_portrait.cli import main; main()`
                                   # kept only so `python update_portrait.py ...` (per the
@@ -70,9 +114,10 @@ update_portrait.py               # thin repo-root shim: `from update_portrait.cl
 ```
 
 ### Guidelines to keep this maintainable long-term
-- **Single responsibility per module**: `cli.py` never touches `fitz`/`Pillow`
-  directly — it parses args and calls into `fields`/`image_prep`/`pdf_ops`.
-  This keeps each file short and testable without a full CLI invocation.
+- **Single responsibility per module**: `cli.py` never touches `pikepdf`/
+  `Pillow` directly — it parses args and calls into
+  `fields`/`image_prep`/`pdf_ops`. This keeps each file short and testable
+  without a full CLI invocation.
 - **Type hints everywhere** (function signatures, return types) — makes
   intent obvious at a glance and lets editors/IDEs help future contributors.
 - **Docstrings**: one-line module docstring at the top of every file, plus a
@@ -116,7 +161,7 @@ update_portrait.py SHEET.pdf PORTRAIT.jpg -o OUTPUT.pdf
 ```
 
 ### Steps
-1. **Load** the PDF with `fitz.open(sheet_path)`.
+1. **Load** the PDF with `pikepdf.open(sheet_path)`.
 2. **Locate the portrait field:**
    - If `--field` given, find the widget with that exact `field_name` (search
      all pages).
@@ -128,23 +173,40 @@ update_portrait.py SHEET.pdf PORTRAIT.jpg -o OUTPUT.pdf
      button field names (name, page, rect) and exit non-zero with guidance to
      rerun with `--field`.
 3. **Prepare the image** with Pillow:
-   - Open portrait JPG, apply `ImageOps.exif_transpose`.
-   - Compute target rect size/aspect from the widget's `rect`.
-   - Resize/crop per `--fit` mode (`cover` = crop to fill rect, `contain` =
-     letterbox within rect) so proportions look correct on the sheet.
-   - Save to an in-memory buffer as JPEG for embedding.
-4. **Embed the image:**
-   - `page.insert_image(widget.rect, stream=buffer, keep_proportion=False)`
-     (aspect already handled in step 3) on the widget's page.
-5. **Neutralize the placeholder widget** so it doesn't float a clickable/empty
-   button on top of the new image: delete the annotation
-   (`page.delete_widget(widget)` / `page.delete_annot`) after inserting the
-   image, or clear its border/background — deletion is preferred so no ghost
-   button remains.
-6. **Preserve every other field:** do not touch any other widget; PyMuPDF's
-   incremental save keeps the rest of the AcroForm intact and fillable.
-7. **Save** via `doc.save(output_path, garbage=4, deflate=True)`.
-8. **Exit codes / errors:** clear, actionable stderr messages for: file not
+   - Open portrait JPG/PNG/etc., apply `ImageOps.exif_transpose`.
+   - If the source has an alpha channel, **composite it onto an opaque
+     white background** (`Image.alpha_composite`/`Image.paste(img, mask=...)`
+     against a solid white canvas) — do *not* use a naive `.convert("RGB")`,
+     which drops alpha without blending and can leave garbage-colored
+     pixels showing through transparent/semi-transparent regions.
+   - Compute the target aspect ratio from the widget's `rect` (not its
+     literal point dimensions — see below).
+   - Crop/pad per `--fit` mode (`cover` = crop to fill the rect's aspect,
+     `contain` = letterbox within it) to match that aspect ratio, at a
+     reasonably high resolution — real Acrobat-authored sheets embed the
+     icon far larger (e.g. 816×816px) than the widget's point-sized
+     display rect and let the PDF's appearance-stream `cm` matrix scale it
+     down, rather than downsampling to the rect's literal point dimensions.
+   - Encode to JPEG bytes (with a fixed quality constant) for embedding as
+     a `DCTDecode` Image XObject.
+4. **Build and set the icon** (`pdf_ops.set_field_icon`):
+   - Build one Image XObject (raw JPEG bytes) + one Form XObject ("FRM",
+     draws the image at native pixel size) — these become the field's
+     `/MK/I` icon, shared across every widget annotation for the field.
+   - For each widget annotation belonging to the field (one for a "merged"
+     field, or one per `/Kids` entry), build a per-widget `/AP/N` Form
+     XObject that clips to that widget's own `/Rect` and scales the icon
+     to fit it, then set `/MK` and `/AP` on that annotation.
+   - The field **stays a live, clickable Button field** afterwards — this
+     matches Acrobat's own behavior and the user's real reference outputs
+     in `examples/outputs/`, and means the portrait remains replaceable
+     later (in Acrobat, or by re-running this tool) rather than being
+     baked permanently into the page content.
+5. **Preserve every other field:** only the target field's widget
+   annotation(s) are touched; every other AcroForm field/value is left
+   completely untouched by `pikepdf`.
+6. **Save** via `pdf.save(output_path)`.
+7. **Exit codes / errors:** clear, actionable stderr messages for: file not
    found, encrypted PDF, no candidate field found, ambiguous field found.
 
 ### Example usage against sample data
@@ -193,11 +255,22 @@ fixtures checked into the repo so `pytest` and CI never depend on
 - **`tests/fixtures/portrait.jpg`** (and a `.png` variant): a small
   programmatically-generated image (e.g., Pillow-drawn gradient/shapes),
   not a real photo — fully original, safe to commit and redistribute.
+- **`tests/fixtures/portrait_transparent.png`**: same idea, but with a real
+  alpha channel (partially and/or fully transparent regions), to exercise
+  transparency handling specifically. Since the embedded icon image is
+  encoded as JPEG/DCTDecode (no alpha support), `image_prep.py` must
+  properly **composite transparent input images onto an opaque white
+  background** (not just drop the alpha channel, which can leave
+  garbage-colored pixels showing through from naive `.convert("RGB")`).
+  Add a unit test asserting a known transparent pixel becomes white
+  (255, 255, 255) in the output, not black/garbage, and that a
+  partially-transparent pixel blends correctly toward white.
 - **`tests/test_update_portrait.py`** (pytest): drives `update_portrait.py`
   against the generated fixtures — covers auto-detect success, `--field`
   override, `--list-fields`, no-candidate error, ambiguous error, `--fit`
-  modes, PNG-input normalization, and confirms non-image fields survive
-  untouched (re-open output with `fitz`/`pdftk` and diff field names/values).
+  modes, PNG-input normalization, transparent-PNG-input flattening to white,
+  and confirms non-image fields survive untouched (re-open output with
+  `pikepdf`/`pdftk` and diff field names/values).
 - Fixtures are static, checked into git (deterministic, no need to
   regenerate on every run); `generate_fixtures.py` is kept only so they can
   be regenerated/extended later.
@@ -255,11 +328,36 @@ without needing to manually create a venv or have Python preinstalled.
    - Use `appimagetool` (or `linuxdeploy` if we later add a `.desktop`
      GUI-style entry) to wrap the PyInstaller one-file binary plus an
      `AppRun` entrypoint and minimal `AppDir/` (`update-portrait.desktop`,
-     a placeholder icon) into `update-portrait-x86_64.AppImage`.
+     an icon) into `update-portrait-x86_64.AppImage`.
    - Script: `packaging/build-appimage.sh`.
-6. **Orchestration**: `packaging/build-all.sh` runs PyInstaller once, then all
+6. **Icon: one source image, generate every size/format needed**:
+   - Keep a **single master icon source**, `packaging/icon/icon-source.png`
+     (large, e.g. 512×512, ideally the highest resolution the human artist
+     provides) — this is the *only* file a human ever hand-edits/draws.
+   - Since real app icon artwork is human-only (see
+     `.github/copilot-instructions.md`), commit a simple **placeholder** for
+     `icon-source.png` showing safe-zone guides (e.g. a bordered square, a
+     centered circle marking the "rounded icon" crop-safe area, crosshairs,
+     and a "REPLACE WITH ARTWORK" label) — generated by a small script
+     (`packaging/icon/generate_placeholder_icon.py`, Pillow shapes only,
+     same spirit as the test-fixture generator) so it's obvious which file
+     to draw the real icon in and what area is safe from cropping/masking,
+     without the AI creating or editing final artwork itself. Replace this
+     placeholder with real artwork before a public release.
+   - A conversion script, `packaging/icon/generate_icons.py`, derives every
+     size/format the packagers need from that one source (via Pillow
+     resize, no hand-maintained duplicates to drift out of sync):
+     - `packaging/appimage/icon.png` (256×256, for the AppImage/`.desktop`).
+     - `packaging/icons/hicolor/{16,32,48,64,128,256}x*/apps/update-portrait.png`
+       (freedesktop hicolor icon theme sizes, installed by the `.deb`/`.rpm`
+       so the icon shows up correctly in Linux app menus/file managers at
+       every size they request).
+   - `build-deb.sh`/`build-rpm.sh`/`build-appimage.sh` all run
+     `generate_icons.py` (or depend on its already-generated output) rather
+     than referencing hand-maintained per-size icon files directly.
+7. **Orchestration**: `packaging/build-all.sh` runs PyInstaller once, then all
    three packagers, writing artifacts to `dist/packages/`.
-7. **CI validation** (follow-up, not required for first pass): smoke-test
+8. **CI validation** (follow-up, not required for first pass): smoke-test
    install of the `.deb` in an `ubuntu:latest` container and the `.rpm` in a
    `fedora:latest` container (`dpkg -i` / `rpm -Uvh` + run `update-portrait
    --help`), and that the AppImage is executable and runs on a generic Linux
@@ -276,18 +374,33 @@ packaging/
   build-appimage.sh
   build-all.sh
   lib/stage-files.sh           # shared staging helper for fpm-based builds
+  icon/
+    icon-source.png            # THE single source icon; placeholder w/ safe-zone
+                                # guides until a human replaces it with real art
+    generate_placeholder_icon.py  # (re)generates the placeholder guide image
+    generate_icons.py          # derives every size/format below from icon-source.png
+  icons/hicolor/16x16/apps/update-portrait.png   # generated, not committed
+  icons/hicolor/32x32/apps/update-portrait.png   # generated, not committed
+  icons/hicolor/48x48/apps/update-portrait.png   # generated, not committed
+  icons/hicolor/64x64/apps/update-portrait.png   # generated, not committed
+  icons/hicolor/128x128/apps/update-portrait.png # generated, not committed
+  icons/hicolor/256x256/apps/update-portrait.png # generated, not committed
   appimage/
     update-portrait.desktop
-    icon.png
+    icon.png                  # generated, not committed (see generate_icons.py)
 ```
 
 ### Notes / risks
 - `fpm` requires Ruby; document this build-time dependency in
   `packaging/README.md` (not needed by end users, only by whoever builds
   releases).
-- PyMuPDF ships platform-specific wheels with compiled extensions —
-  PyInstaller must be run natively on each target OS/arch; CI matrix should
-  build on `ubuntu-latest` for all three Linux artifacts.
+- Only `packaging/icon/icon-source.png` is committed; every derived
+  size/format under `packaging/icons/` and `packaging/appimage/icon.png` is
+  build output from `generate_icons.py` and should be `.gitignore`d, same as
+  `dist/`, so there's never more than one file to keep in sync by hand.
+- `pikepdf` ships platform-specific wheels with compiled extensions (it
+  bundles `qpdf`) — PyInstaller must be run natively on each target OS/arch;
+  CI matrix should build on `ubuntu-latest` for all three Linux artifacts.
 - This project targets Linux only (`.deb`/`.rpm`/AppImage packaging, plus
   `setup.sh`/`format.sh`). Windows users should use Adobe Acrobat's own
   tooling to set a portrait/image button icon instead — no Windows build is
@@ -295,7 +408,22 @@ packaging/
 
 ## Out of scope / follow-ups
 - No GUI; CLI only for now.
-- No support for re-inserting an image as an *interactive* button icon
-  (would require hand-built `/AP` appearance streams) — baking the image into
-  the page content is sufficient for the stated use case.
 - Batch mode (many sheets/portraits at once) could be a future enhancement.
+
+## Documentation
+
+Once the implementation above is working end-to-end, update `README.md`
+(final step, after everything else in this plan is done) to cover:
+- **For users**: what the tool does, install options (`.venv`+`setup.sh`,
+  or the `.deb`/`.rpm`/AppImage once packaging exists), CLI usage/examples
+  (mirroring the "Example usage against sample data" section above),
+  `--field`/`--fit`/`--list-fields` flags, and a note that the portrait
+  field stays a live, replaceable Button field afterwards (not baked in
+  permanently).
+- **For human devs**: `.venv` setup, running `./format.sh`/`./format.sh
+  --check`, running the test suite (`pytest`), regenerating fixtures
+  (`tests/fixtures/generate_fixtures.py`), the `examples/` IP-sensitivity
+  rule (never commit/run real sheets in CI), and a pointer to
+  `.github/copilot-instructions.md` for the full contributor conventions
+  (including the human-only project artwork rule and AI git-operation
+  limits) so this isn't duplicated in two places.
