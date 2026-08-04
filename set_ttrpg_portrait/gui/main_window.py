@@ -69,6 +69,11 @@ class MainWindow(QMainWindow):
         # Appearance" fields can be processed once per field.
         self._field_candidates: list[str] = []
         self._selected_field: str | None = None
+        # Full-resolution stacked preview pixmap — kept so it can be
+        # rescaled to fit the current viewport width (see
+        # `_rescale_preview()`) without re-rendering the PDF on every
+        # window resize.
+        self._preview_pixmap: QPixmap | None = None
 
         self.sheet_browse_button.clicked.connect(self._browse_sheet)
         self.portrait_browse_button.clicked.connect(self._browse_portrait)
@@ -126,6 +131,7 @@ class MainWindow(QMainWindow):
         self._cleanup_temp_output()
         self.save_button.setEnabled(False)
         self.change_field_button.setEnabled(False)
+        self._preview_pixmap = None
         self.preview_label.setText("No preview yet.")
         self.preview_label.setPixmap(QPixmap())
         self.status_label.setText("Select a sheet and a portrait to begin.")
@@ -198,17 +204,46 @@ class MainWindow(QMainWindow):
         try:
             page_images = preview.load_page_images(pdf_path)
         except Exception as exc:  # noqa: BLE001 - preview is best-effort
+            self._preview_pixmap = None
             self.preview_label.setText(f"Could not render preview: {exc}")
             self.preview_label.setPixmap(QPixmap())
             return
 
         if not page_images:
+            self._preview_pixmap = None
             self.preview_label.setText("Sheet has no pages to preview.")
             self.preview_label.setPixmap(QPixmap())
             return
 
         self.preview_label.setText("")
-        self.preview_label.setPixmap(preview.stack_images(page_images))
+        self._preview_pixmap = preview.stack_images(page_images)
+        self._rescale_preview()
+
+    def _rescale_preview(self) -> None:
+        """Fit the stacked preview pixmap to the scroll area's viewport width.
+
+        Keeps scrolling to just one axis (vertical, through/between pages)
+        instead of needing to scroll horizontally too. Called on every
+        resize (see `resizeEvent()`) since the viewport width changes.
+        """
+        if self._preview_pixmap is None or self._preview_pixmap.isNull():
+            return
+        scroll_area = self.preview_scroll_area
+        # Compute from the scroll area's own width rather than
+        # `viewport().width()`: the viewport only shrinks *after* a
+        # vertical scrollbar appears, which itself only happens once a
+        # too-wide pixmap is set — reserving its width upfront (always,
+        # since multi-page sheets almost always need one) avoids a
+        # second, slightly-delayed rescale pass to correct for it.
+        frame = 2 * scroll_area.frameWidth()
+        scrollbar_width = scroll_area.verticalScrollBar().sizeHint().width()
+        available_width = scroll_area.width() - frame - scrollbar_width
+        scaled = preview.scale_to_width(self._preview_pixmap, available_width)
+        self.preview_label.setPixmap(scaled)
+
+    def resizeEvent(self, event) -> None:  # noqa: N802 (Qt override signature)
+        super().resizeEvent(event)
+        self._rescale_preview()
 
     def _on_failure(self, message: str) -> None:
         self._set_inputs_enabled(True)

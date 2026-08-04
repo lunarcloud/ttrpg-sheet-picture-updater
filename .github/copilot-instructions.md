@@ -47,6 +47,21 @@
   `errors.py`) plus a thin root-level `set_ttrpg_portrait.py` shim — not one
   large flat script. Keep new logic in the appropriately-scoped module
   rather than piling everything into `cli.py`.
+- The GUI is its own subpackage (`set_ttrpg_portrait/gui/`), split by
+  concern rather than one large `gui.py`: `main_window.ui` (a Qt Designer
+  form — the visual layout only, editable in Qt Designer or by hand, loaded
+  at runtime via `PyQt6.uic.loadUi()`), `main_window.py` (`MainWindow`'s
+  business logic/signal wiring, no manual widget construction), `worker.py`
+  (`ApplyWorker`, runs `core.apply_portrait()` off the UI thread),
+  `preview.py` (PyMuPDF-based sheet-preview rendering), `icon.py`
+  (window-icon lookup), and `app.py` (`main()`, the process entry point).
+  Keep the look (`.ui`) and the logic (`.py`) changes separate where
+  possible — e.g. add a new widget in the `.ui` file, then wire its
+  behavior in `main_window.py`. If a build bundles the GUI (PyInstaller
+  `.spec` files), remember `main_window.ui` must be added to `datas`
+  alongside `packaging/icon/icon-source.png` — see the existing entries
+  in `packaging/set-ttrpg-portrait-gui.spec` and
+  `packaging/set-ttrpg-portrait-appimage.spec`.
 - Use type hints and a short docstring on every public function/module.
   Prefer small, pure functions (no I/O) for logic like field-name matching
   or image-fit math, so they're easy to unit test in isolation.

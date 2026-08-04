@@ -50,6 +50,18 @@ def stack_images(page_images: list[QImage]) -> QPixmap:
     return QPixmap.fromImage(stacked)
 
 
+def scale_to_width(pixmap: QPixmap, width: int) -> QPixmap:
+    """Scale `pixmap` to `width`, preserving aspect ratio.
+
+    Used to fit the (potentially much higher-resolution) stacked preview
+    to the scroll area's viewport width, so only vertical scrolling
+    (between/through pages) is needed — never horizontal.
+    """
+    if width <= 0 or pixmap.isNull() or pixmap.width() == width:
+        return pixmap
+    return pixmap.scaledToWidth(width, Qt.TransformationMode.SmoothTransformation)
+
+
 def _page_to_qimage(page: fitz.Page) -> QImage:
     zoom = PREVIEW_DPI / 72
     pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))
