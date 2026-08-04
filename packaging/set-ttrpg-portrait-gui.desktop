@@ -2,7 +2,7 @@
 Type=Application
 Name=Set TTRPG Portrait
 Comment=Embed a portrait image into a fillable TTRPG character sheet PDF
-Exec=set-ttrpg-portrait-launcher
+Exec=set-ttrpg-portrait-gui
 Icon=set-ttrpg-portrait
 Categories=Utility;Office;
 Terminal=false

@@ -11,14 +11,11 @@ import argparse
 import sys
 
 from set_ttrpg_portrait import __version__
+from set_ttrpg_portrait.core import apply_portrait
 from set_ttrpg_portrait.errors import SetTtrpgPortraitError
-from set_ttrpg_portrait.fields import find_button_fields, find_portrait_field
-from set_ttrpg_portrait.image_prep import (
-    DEFAULT_ICON_DPI,
-    points_to_pixels,
-    prepare_portrait_jpeg,
-)
-from set_ttrpg_portrait.pdf_ops import open_sheet, save_sheet, set_field_icon
+from set_ttrpg_portrait.fields import find_button_fields
+from set_ttrpg_portrait.image_prep import DEFAULT_ICON_DPI
+from set_ttrpg_portrait.pdf_ops import open_sheet
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -112,16 +109,15 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     try:
-        candidate = find_portrait_field(pdf, args.field, args.page)
-        rect = candidate.locations[0].rect
-        rect_points = (rect[2] - rect[0], rect[3] - rect[1])
-        portrait_bytes = prepare_portrait_jpeg(
+        apply_portrait(
+            args.sheet,
             args.portrait,
-            target_size=points_to_pixels(rect_points, dpi=args.dpi),
-            mode=args.fit,
+            args.output,
+            field=args.field,
+            page=args.page,
+            fit=args.fit,
+            dpi=args.dpi,
         )
-        set_field_icon(pdf, candidate, portrait_bytes)
-        save_sheet(pdf, args.output)
     except SetTtrpgPortraitError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Builds a standalone AppImage from the PyInstaller-frozen binary.
+# Builds a standalone AppImage bundling a single combined CLI+GUI binary
+# (see set_ttrpg_portrait/launcher.py: no args or --gui launches the GUI,
+# any other args behave like the CLI).
 # See packaging/README.md for design rationale.
 #
 # Usage: ./packaging/build-appimage.sh
@@ -30,16 +32,16 @@ if [ ! -x "$PYTHON" ]; then
     exit 1
 fi
 
-echo "Building the frozen binary with PyInstaller..."
-(cd "$REPO_ROOT" && "$PYTHON" -m PyInstaller "$SCRIPT_DIR/set-ttrpg-portrait.spec" --noconfirm)
+echo "Building the combined CLI+GUI launcher binary with PyInstaller..."
+(cd "$REPO_ROOT" && "$PYTHON" -m PyInstaller "$SCRIPT_DIR/set-ttrpg-portrait-appimage.spec" --noconfirm)
 
 echo "Generating packaging icons from the master source icon..."
 "$PYTHON" "$SCRIPT_DIR/icon/generate_icons.py"
 
 rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/bin"
-cp "$REPO_ROOT/dist/set-ttrpg-portrait" "$APPDIR/usr/bin/set-ttrpg-portrait"
-chmod 755 "$APPDIR/usr/bin/set-ttrpg-portrait"
+cp "$REPO_ROOT/dist/set-ttrpg-portrait-launcher" "$APPDIR/usr/bin/set-ttrpg-portrait-launcher"
+chmod 755 "$APPDIR/usr/bin/set-ttrpg-portrait-launcher"
 
 cp "$SCRIPT_DIR/appimage/set-ttrpg-portrait.desktop" "$APPDIR/set-ttrpg-portrait.desktop"
 cp "$SCRIPT_DIR/appimage/icon.png" "$APPDIR/set-ttrpg-portrait.png"
@@ -47,7 +49,7 @@ cp "$SCRIPT_DIR/appimage/icon.png" "$APPDIR/set-ttrpg-portrait.png"
 cat > "$APPDIR/AppRun" <<'EOF'
 #!/usr/bin/env bash
 HERE="$(dirname "$(readlink -f "${0}")")"
-exec "$HERE/usr/bin/set-ttrpg-portrait" "$@"
+exec "$HERE/usr/bin/set-ttrpg-portrait-launcher" "$@"
 EOF
 chmod 755 "$APPDIR/AppRun"
 
