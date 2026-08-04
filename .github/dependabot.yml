@@ -7,6 +7,10 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - "*"
 
   # GitHub Actions workflow versions (.github/workflows/*.yml)
   - package-ecosystem: "github-actions"
@@ -14,3 +18,7 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - "*"
