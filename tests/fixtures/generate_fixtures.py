@@ -18,6 +18,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import fitz
+import pikepdf
 from PIL import Image, ImageDraw
 
 FIXTURES_DIR = Path(__file__).parent
@@ -92,6 +93,49 @@ def make_ambiguous_sheet() -> None:
     doc.close()
 
 
+def make_multi_location_sheet() -> None:
+    """One "Portrait" field with two `/Kids` widgets of different shapes.
+
+    Mirrors sheets where the same field is repeated across pages (see
+    `fields.FieldCandidate`'s docstring) — here with deliberately
+    different aspect ratios (a square vs. a wide rectangle) so tests can
+    assert the portrait is fit/cropped separately per location instead of
+    one shared fit being stretched to cover both.
+    """
+    pdf = pikepdf.new()
+    page1 = pdf.add_blank_page(page_size=PAGE_SIZE)
+    page2 = pdf.add_blank_page(page_size=PAGE_SIZE)
+
+    field = pdf.make_indirect(
+        pikepdf.Dictionary(FT=pikepdf.Name.Btn, Ff=65536, T="Portrait")
+    )
+    widget1 = pdf.make_indirect(
+        pikepdf.Dictionary(
+            Type=pikepdf.Name.Annot,
+            Subtype=pikepdf.Name.Widget,
+            Rect=[20, 60, 180, 220],  # 160x160 square
+            Parent=field,
+            P=page1.obj,
+        )
+    )
+    widget2 = pdf.make_indirect(
+        pikepdf.Dictionary(
+            Type=pikepdf.Name.Annot,
+            Subtype=pikepdf.Name.Widget,
+            Rect=[20, 60, 340, 140],  # 320x80 wide rectangle
+            Parent=field,
+            P=page2.obj,
+        )
+    )
+    field.Kids = [widget1, widget2]
+
+    pdf.Root.AcroForm = pikepdf.Dictionary(Fields=[field])
+    page1.obj.Annots = [widget1]
+    page2.obj.Annots = [widget2]
+    pdf.save(FIXTURES_DIR / "multi_location_sheet.pdf")
+    pdf.close()
+
+
 def make_portrait_images() -> None:
     """A small, original, programmatically-drawn placeholder "portrait".
 
@@ -147,6 +191,7 @@ def make_transparent_portrait_image() -> None:
 def main() -> None:
     make_simple_sheet()
     make_multi_field_sheet()
+    make_multi_location_sheet()
     make_no_image_sheet()
     make_ambiguous_sheet()
     make_portrait_images()

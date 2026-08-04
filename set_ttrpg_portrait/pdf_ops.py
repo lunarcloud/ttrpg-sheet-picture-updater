@@ -136,7 +136,7 @@ def _build_appearance_form(
 def set_field_icon(
     pdf: pikepdf.Pdf,
     candidate: FieldCandidate,
-    portrait_jpeg_bytes: bytes,
+    portrait_jpegs: tuple[bytes, ...],
 ) -> None:
     """Set the portrait as the icon on every widget annotation for a field.
 
@@ -145,9 +145,17 @@ def set_field_icon(
     replaceable later (in Acrobat or by re-running this tool). Every other
     form field in the document is left untouched.
 
-    The image's pixel dimensions are read from the JPEG bytes themselves
-    (via Pillow), so callers never need to track width/height separately
-    from the encoded bytes.
+    ``portrait_jpegs`` supplies one already-fitted JPEG per widget
+    annotation, in the same order as ``candidate.locations`` (see
+    `core.apply_portrait`, which fits the portrait separately to each
+    location's own rectangle). A single shared image would have to be
+    stretched non-uniformly to fill rectangles of different aspect ratios
+    if a field has more than one widget annotation with a different shape
+    (e.g. the same field repeated across pages at different sizes).
+
+    Each image's pixel dimensions are read from its own JPEG bytes (via
+    Pillow), so callers never need to track width/height separately from
+    the encoded bytes.
     """
     field = _find_field(pdf, candidate.name)
     annotations = _widget_annotations(field)
@@ -156,14 +164,18 @@ def set_field_icon(
             f"Field {candidate.name!r} has neither /Rect nor /Kids; can't "
             "place an icon on it."
         )
+    if len(portrait_jpegs) != len(annotations):
+        raise InvalidPdfError(
+            f"Field {candidate.name!r} has {len(annotations)} widget "
+            f"annotation(s) but {len(portrait_jpegs)} portrait image(s) "
+            "were prepared for it."
+        )
 
-    image_width, image_height = Image.open(io.BytesIO(portrait_jpeg_bytes)).size
-    image_xobject = _build_image_xobject(
-        pdf, portrait_jpeg_bytes, image_width, image_height
-    )
-    icon_form = _build_icon_form(pdf, image_xobject, image_width, image_height)
+    for annotation, jpeg_bytes in zip(annotations, portrait_jpegs):
+        image_width, image_height = Image.open(io.BytesIO(jpeg_bytes)).size
+        image_xobject = _build_image_xobject(pdf, jpeg_bytes, image_width, image_height)
+        icon_form = _build_icon_form(pdf, image_xobject, image_width, image_height)
 
-    for annotation in annotations:
         rect = [float(v) for v in annotation.Rect]
         rect_width, rect_height = rect[2] - rect[0], rect[3] - rect[1]
         appearance_form = _build_appearance_form(

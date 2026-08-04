@@ -65,7 +65,18 @@ class MainWindow(QMainWindow):
         self._temp_output_path: str | None = None
         self._thread: QThread | None = None
         self._worker: ApplyWorker | None = None
-        # Set if an input changes while a process is already running, so we
+        # True for the whole span of one job, from `_process()` starting
+        # it until its terminal signal (`_on_success`/`_on_failure`/
+        # `_on_ambiguous`) has run — not just while `self._thread.isRunning()`
+        # is true. `QThread.quit()` only *requests* the thread's event loop
+        # stop; it hasn't necessarily done so yet by the time our terminal
+        # signal handler runs (both are queued to this same main-thread
+        # event loop, in call order), so checking `isRunning()` there could
+        # still see the old thread as running and defer a reprocess that
+        # will then never be retried. This flag is authoritative regardless
+        # of that ordering.
+        self._busy = False
+        # Set if an input changes while a job is already running, so we
         # know to kick off a fresh one (with the latest inputs) once it
         # finishes instead of silently dropping the change.
         self._reprocess_needed = False
@@ -214,7 +225,7 @@ class MainWindow(QMainWindow):
         """Process automatically once both inputs are set (no Process button)."""
         if not (self._sheet_path and self._portrait_path):
             return
-        if self._thread is not None and self._thread.isRunning():
+        if self._busy:
             self._reprocess_needed = True
             return
         self._process(field=field)
@@ -229,6 +240,7 @@ class MainWindow(QMainWindow):
         os.close(fd)
         self._temp_output_path = temp_path
 
+        self._busy = True
         self._set_inputs_enabled(False)
         self.save_button.setEnabled(False)
         self.change_field_button.setEnabled(False)
@@ -246,6 +258,12 @@ class MainWindow(QMainWindow):
         self._worker.succeeded.connect(self._thread.quit)
         self._worker.failed.connect(self._thread.quit)
         self._worker.ambiguous.connect(self._thread.quit)
+        # Release the previous job's QThread/ApplyWorker once its event
+        # loop actually stops, instead of just overwriting `self._thread`/
+        # `self._worker` and leaving the old Qt objects to pile up for the
+        # lifetime of the window.
+        self._thread.finished.connect(self._thread.deleteLater)
+        self._thread.finished.connect(self._worker.deleteLater)
         self._thread.start()
 
     def _set_inputs_enabled(self, enabled: bool) -> None:
@@ -259,6 +277,7 @@ class MainWindow(QMainWindow):
             widget.setEnabled(enabled)
 
     def _on_success(self, output_path: str) -> None:
+        self._busy = False
         self._set_inputs_enabled(True)
         self._render_preview(output_path)
         self.save_button.setEnabled(True)
@@ -320,12 +339,14 @@ class MainWindow(QMainWindow):
         self._rescale_preview()
 
     def _on_failure(self, message: str) -> None:
+        self._busy = False
         self._set_inputs_enabled(True)
         self.status_label.setText("Failed.")
         QMessageBox.critical(self, "Could not embed portrait", message)
         self._process_pending_reprocess()
 
     def _on_ambiguous(self, message: str, field_names: list[str]) -> None:
+        self._busy = False
         self._set_inputs_enabled(True)
         self.status_label.setText("Multiple portrait fields found.")
         self._field_candidates = field_names
@@ -363,7 +384,7 @@ class MainWindow(QMainWindow):
         """
         if not self._field_candidates:
             return
-        if self._thread is not None and self._thread.isRunning():
+        if self._busy:
             return
         self._offer_field_picker("Choose which field to set the portrait on.")
 
@@ -395,5 +416,23 @@ class MainWindow(QMainWindow):
         self._temp_output_path = None
 
     def closeEvent(self, event) -> None:  # noqa: N802 (Qt override signature)
+        self._shutdown_thread()
         self._cleanup_temp_output()
         super().closeEvent(event)
+
+    def _shutdown_thread(self) -> None:
+        """Block briefly until any in-flight background job fully stops.
+
+        `self._thread` is parented to `self`, so Qt would otherwise
+        destroy it alongside this window — if a job is still running at
+        that point, Qt aborts the process with "QThread: Destroyed while
+        thread '...' is still running" instead of merely warning. Jobs
+        can't be cancelled mid-flight (`ApplyWorker.run()` is one
+        synchronous call), but they're normally sub-second, so waiting
+        here for it to finish (it already has `succeeded`/`failed`/
+        `ambiguous` wired to `thread.quit()`) is a short, safe wait rather
+        than a real hang.
+        """
+        if self._thread is not None and self._thread.isRunning():
+            self._thread.quit()
+            self._thread.wait()
