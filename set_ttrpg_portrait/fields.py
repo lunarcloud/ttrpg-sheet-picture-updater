@@ -28,9 +28,12 @@ from set_ttrpg_portrait.errors import (
 PDF_PUSHBUTTON_FLAG = 1 << 16
 
 # Field names that plausibly hold a character portrait/photo, matched
-# case-insensitively against the whole field name.
+# case-insensitively against the whole field name. Only ever applied to
+# fields already filtered down to pushbuttons (see `_is_pushbutton_field`),
+# so a broad word like "appearance" is safe here — it can't accidentally
+# match an unrelated text field.
 PORTRAIT_FIELD_NAME_PATTERN = re.compile(
-    r"portrait|character\s*image|photo|headshot|player\s*image|^image$",
+    r"portrait|character\s*image|photo|headshot|player\s*image|appearance|^image$",
     re.IGNORECASE,
 )
 
@@ -177,9 +180,11 @@ def find_portrait_field(
             "--field NAME."
         )
     if len(matches) > 1:
-        names = ", ".join(repr(c.name) for c in matches)
+        match_names = tuple(c.name for c in matches)
+        names = ", ".join(repr(name) for name in match_names)
         raise AmbiguousFieldError(
             f"Multiple candidate portrait fields were found ({names}). "
-            "Rerun with --field NAME to disambiguate."
+            "Rerun with --field NAME to disambiguate.",
+            field_names=match_names,
         )
     return matches[0]

@@ -33,6 +33,8 @@ FIXTURES = Path(__file__).parent / "fixtures"
         "Image",
         "Player Image",
         "headshot",
+        "Pilot Appearance",
+        "Mech Appearance",
     ],
 )
 def test_is_portrait_field_name_matches(name: str) -> None:

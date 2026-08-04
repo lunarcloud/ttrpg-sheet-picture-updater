@@ -20,6 +20,12 @@ class NoCandidateFieldError(SetTtrpgPortraitError):
 class AmbiguousFieldError(SetTtrpgPortraitError):
     """Raised when more than one field matches the portrait-field heuristic."""
 
+    def __init__(self, message: str, field_names: tuple[str, ...] = ()) -> None:
+        super().__init__(message)
+        #: Names of every candidate field that matched, so callers (e.g.
+        #: the GUI) can offer a picker without re-parsing the message text.
+        self.field_names = field_names
+
 
 class FieldNotFoundError(SetTtrpgPortraitError):
     """Raised when an explicitly-requested ``--field`` name doesn't exist."""

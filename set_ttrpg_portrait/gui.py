@@ -42,8 +42,6 @@ from PyQt6.QtWidgets import (
 from set_ttrpg_portrait import __version__
 from set_ttrpg_portrait.core import apply_portrait
 from set_ttrpg_portrait.errors import AmbiguousFieldError, SetTtrpgPortraitError
-from set_ttrpg_portrait.fields import find_button_fields
-from set_ttrpg_portrait.pdf_ops import open_sheet
 
 #: Suffix used for the throwaway preview copy of the sheet.
 _TEMP_SUFFIX = ".set-ttrpg-portrait-preview.pdf"
@@ -54,11 +52,6 @@ _PREVIEW_DPI = 150
 
 #: Vertical gap (pixels) drawn between stacked page images in the preview.
 _PREVIEW_PAGE_GAP = 8
-
-#: Sentinel prefix used to smuggle an "ambiguous field" error across the
-#: worker-thread -> UI-thread signal boundary so the UI can offer a field
-#: picker instead of just showing a plain error dialog.
-_AMBIGUOUS_MARKER = "__ambiguous__:"
 
 #: freedesktop icon theme name installed by the .deb/.rpm (see
 #: packaging/nfpm.yaml + packaging/set-ttrpg-portrait-gui.desktop's
@@ -123,6 +116,9 @@ class _ApplyWorker(QObject):
 
     succeeded = pyqtSignal(str)
     failed = pyqtSignal(str)
+    #: Emitted instead of `failed` when multiple candidate portrait fields
+    #: match (message, candidate field names) so the UI can offer a picker.
+    ambiguous = pyqtSignal(str, list)
 
     def __init__(
         self, sheet_path: str, portrait_path: str, output_path: str, field: str | None
@@ -142,7 +138,7 @@ class _ApplyWorker(QObject):
                 field=self._field,
             )
         except AmbiguousFieldError as exc:
-            self.failed.emit(f"{_AMBIGUOUS_MARKER}{exc}")
+            self.ambiguous.emit(str(exc), list(exc.field_names))
             return
         except (SetTtrpgPortraitError, FileNotFoundError) as exc:
             self.failed.emit(str(exc))
@@ -165,6 +161,13 @@ class MainWindow(QMainWindow):
         # know to kick off a fresh one (with the latest inputs) once it
         # finishes instead of silently dropping the change.
         self._reprocess_needed = False
+        # Candidate field names offered the last time an ambiguous-field
+        # picker was shown, and which one is currently selected — lets
+        # "Change Field…" reopen the same choice without recomputing it,
+        # so a sheet with e.g. both "Pilot Appearance" and "Mech
+        # Appearance" fields can be processed once per field.
+        self._field_candidates: list[str] = []
+        self._selected_field: str | None = None
 
         self._sheet_edit = QLineEdit(readOnly=True)
         self._portrait_edit = QLineEdit(readOnly=True)
@@ -180,6 +183,11 @@ class MainWindow(QMainWindow):
         self._save_button = QPushButton("Save As…")
         self._save_button.setEnabled(False)
         self._save_button.clicked.connect(self._save_as)
+
+        self._change_field_button = QPushButton("Change Field…")
+        self._change_field_button.setEnabled(False)
+        self._change_field_button.setVisible(False)
+        self._change_field_button.clicked.connect(self._change_field)
 
         self._status_label = QLabel("Select a sheet and a portrait to begin.")
 
@@ -207,6 +215,7 @@ class MainWindow(QMainWindow):
 
         buttons_row = QHBoxLayout()
         buttons_row.addWidget(self._save_button)
+        buttons_row.addWidget(self._change_field_button)
         layout.addLayout(buttons_row)
 
         layout.addWidget(self._status_label)
@@ -234,6 +243,7 @@ class MainWindow(QMainWindow):
         if path:
             self._sheet_path = path
             self._sheet_edit.setText(path)
+            self._reset_field_choice()
             self._maybe_auto_process()
 
     def _browse_portrait(self) -> None:
@@ -251,6 +261,7 @@ class MainWindow(QMainWindow):
     def _clear_sheet(self) -> None:
         self._sheet_path = None
         self._sheet_edit.clear()
+        self._reset_field_choice()
         self._reset_output()
 
     def _clear_portrait(self) -> None:
@@ -258,10 +269,22 @@ class MainWindow(QMainWindow):
         self._portrait_edit.clear()
         self._reset_output()
 
+    def _reset_field_choice(self) -> None:
+        """Forget any previously-offered ambiguous-field choice.
+
+        Called whenever the sheet changes, since candidate field names
+        from a previous sheet don't apply to a new one.
+        """
+        self._field_candidates = []
+        self._selected_field = None
+        self._change_field_button.setVisible(False)
+        self._change_field_button.setEnabled(False)
+
     def _reset_output(self) -> None:
         """Discard any previous preview/output — inputs no longer match it."""
         self._cleanup_temp_output()
         self._save_button.setEnabled(False)
+        self._change_field_button.setEnabled(False)
         self._preview_label.setText("No preview yet.")
         self._preview_label.setPixmap(QPixmap())
         self._status_label.setText("Select a sheet and a portrait to begin.")
@@ -278,6 +301,8 @@ class MainWindow(QMainWindow):
     def _process(self, field: str | None = None) -> None:
         assert self._sheet_path and self._portrait_path
         self._cleanup_temp_output()
+        if field is not None:
+            self._selected_field = field
 
         fd, temp_path = tempfile.mkstemp(suffix=_TEMP_SUFFIX)
         os.close(fd)
@@ -285,6 +310,7 @@ class MainWindow(QMainWindow):
 
         self._set_inputs_enabled(False)
         self._save_button.setEnabled(False)
+        self._change_field_button.setEnabled(False)
         self._status_label.setText("Processing…")
 
         self._thread = QThread(self)
@@ -295,8 +321,10 @@ class MainWindow(QMainWindow):
         self._thread.started.connect(self._worker.run)
         self._worker.succeeded.connect(self._on_success)
         self._worker.failed.connect(self._on_failure)
+        self._worker.ambiguous.connect(self._on_ambiguous)
         self._worker.succeeded.connect(self._thread.quit)
         self._worker.failed.connect(self._thread.quit)
+        self._worker.ambiguous.connect(self._thread.quit)
         self._thread.start()
 
     def _set_inputs_enabled(self, enabled: bool) -> None:
@@ -313,6 +341,9 @@ class MainWindow(QMainWindow):
         self._set_inputs_enabled(True)
         self._render_preview(output_path)
         self._save_button.setEnabled(True)
+        if len(self._field_candidates) > 1:
+            self._change_field_button.setVisible(True)
+            self._change_field_button.setEnabled(True)
         self._status_label.setText("Done — preview shown below.")
         self._process_pending_reprocess()
 
@@ -375,33 +406,50 @@ class MainWindow(QMainWindow):
     def _on_failure(self, message: str) -> None:
         self._set_inputs_enabled(True)
         self._status_label.setText("Failed.")
-        if message.startswith(_AMBIGUOUS_MARKER):
-            self._offer_field_picker(message[len(_AMBIGUOUS_MARKER) :])
-            return
         QMessageBox.critical(self, "Could not embed portrait", message)
         self._process_pending_reprocess()
 
-    def _offer_field_picker(self, ambiguous_message: str) -> None:
-        assert self._sheet_path is not None
-        try:
-            pdf = open_sheet(self._sheet_path)
-            candidates = find_button_fields(pdf, None)
-        except SetTtrpgPortraitError:
-            candidates = []
-        names = [c.name for c in candidates]
-        if not names:
-            QMessageBox.critical(self, "Could not embed portrait", ambiguous_message)
+    def _on_ambiguous(self, message: str, field_names: list[str]) -> None:
+        self._set_inputs_enabled(True)
+        self._status_label.setText("Multiple portrait fields found.")
+        self._field_candidates = field_names
+        self._offer_field_picker(message)
+        self._process_pending_reprocess()
+
+    def _offer_field_picker(self, message: str) -> None:
+        """Prompt the user to choose which candidate field to embed into."""
+        if not self._field_candidates:
+            QMessageBox.critical(self, "Could not embed portrait", message)
             return
+        current = self._selected_field
+        default_index = (
+            self._field_candidates.index(current)
+            if current in self._field_candidates
+            else 0
+        )
         field, ok = QInputDialog.getItem(
             self,
             "Multiple portrait fields found",
-            f"{ambiguous_message}\n\nChoose which field to use:",
-            names,
-            0,
+            f"{message}\n\nChoose which field to use:",
+            self._field_candidates,
+            default_index,
             False,
         )
         if ok and field:
             self._process(field=field)
+
+    def _change_field(self) -> None:
+        """Reopen the field picker to reprocess against a different field.
+
+        Lets the user run the same sheet/portrait against each candidate
+        field (e.g. "Pilot Appearance" then "Mech Appearance") without
+        needing to clear and reselect either input.
+        """
+        if not self._field_candidates:
+            return
+        if self._thread is not None and self._thread.isRunning():
+            return
+        self._offer_field_picker("Choose which field to set the portrait on.")
 
     def _save_as(self) -> None:
         if not self._temp_output_path:
