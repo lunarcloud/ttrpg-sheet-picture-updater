@@ -1,0 +1,32 @@
+{
+    "files": [
+        "packaging/icon/generate_icons.py",
+        "packaging/icon/generate_placeholder_icon.py",
+        "set_ttrpg_portrait/cli.py",
+        "set_ttrpg_portrait/core.py",
+        "set_ttrpg_portrait/errors.py",
+        "set_ttrpg_portrait/fields.py",
+        "set_ttrpg_portrait/gui/app.py",
+        "set_ttrpg_portrait/gui/icon.py",
+        "set_ttrpg_portrait/gui/__init__.py",
+        "set_ttrpg_portrait/gui/__main__.py",
+        "set_ttrpg_portrait/gui/main_window.py",
+        "set_ttrpg_portrait/gui/main_window.ui",
+        "set_ttrpg_portrait/gui/preview.py",
+        "set_ttrpg_portrait_gui.py",
+        "set_ttrpg_portrait/gui/worker.py",
+        "set_ttrpg_portrait/image_prep.py",
+        "set_ttrpg_portrait/__init__.py",
+        "set_ttrpg_portrait/launcher.py",
+        "set_ttrpg_portrait_launcher.py",
+        "set_ttrpg_portrait/__main__.py",
+        "set_ttrpg_portrait/pdf_ops.py",
+        "set_ttrpg_portrait.py",
+        "tests/fixtures/generate_fixtures.py",
+        "tests/__init__.py",
+        "tests/test_cli.py",
+        "tests/test_fields.py",
+        "tests/test_image_prep.py",
+        "tests/test_launcher.py"
+    ]
+}

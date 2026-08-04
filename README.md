@@ -92,5 +92,14 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
    debug tests), and settings pointing at `.venv` — open the Run/Debug and
    Tasks panels to use them; installing the recommended extensions
    (prompted automatically) enables format-on-save and the Testing panel.
+7. Using Qt Creator? Just editing `set_ttrpg_portrait/gui/main_window.ui`
+   visually needs no setup — open it directly in Qt Creator's Designer
+   (File > Open File). To open the whole repo as a Python project (project
+   tree, code completion, run configs), open `set-ttrpg-portrait.pyproject`
+   instead. That file lists tracked `.py`/`.ui` files explicitly (Qt
+   Creator's project format doesn't reliably expand globs), so re-run
+   `./update-qtcreator-project.sh` after adding/removing/renaming any of
+   those files to keep it in sync. Requires a reasonably recent Qt Creator
+   (5+) with the Python plugin enabled — check `Help > About Plugins`.
 
 See [`packaging/README.md`](packaging/README.md) for packaging-script details.

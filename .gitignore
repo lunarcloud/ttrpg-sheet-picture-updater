@@ -346,6 +346,14 @@ cython_debug/
 #   and can be added to the global gitignore or merged into this file. However, if you prefer,
 #   you could uncomment the following to ignore the entire vscode folder
 # .vscode/
+
+# Qt Creator
+#   The .pyproject file itself is committed (see update-qtcreator-project.sh),
+#   but its companion .pyproject.user file and .qtcreator/ cache dir hold
+#   machine-specific settings (selected interpreter/kit, run config paths,
+#   a private venv copy) and shouldn't be shared.
+*.pyproject.user
+.qtcreator/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
