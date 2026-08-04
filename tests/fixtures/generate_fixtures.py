@@ -110,15 +110,20 @@ def make_portrait_images() -> None:
     draw.rectangle((width * 0.2, height * 0.6, width * 0.8, height), fill=(80, 80, 200))
     image.save(FIXTURES_DIR / "portrait.jpg", format="JPEG", quality=90)
     image.save(FIXTURES_DIR / "portrait.png", format="PNG")
+    # Lossless WebP so pixel values match the PNG exactly (see
+    # make_transparent_portrait_image for the transparent counterpart) —
+    # WebP is a fairly common export format for cut-out portraits and
+    # should be handled identically to PNG.
+    image.save(FIXTURES_DIR / "portrait.webp", format="WEBP", lossless=True)
 
 
 def make_transparent_portrait_image() -> None:
     """A synthetic RGBA portrait with real transparency (fully + partial).
 
     Exercises the "flatten transparency onto white" behavior in
-    `image_prep.load_portrait` (transparent PNGs are the likely real-world
-    case, e.g. a portrait cut out from its background). Simple shapes only
-    — not a real photo, not project artwork.
+    `image_prep.load_portrait` (transparent PNGs/WebPs are the likely
+    real-world case, e.g. a portrait cut out from its background). Simple
+    shapes only — not a real photo, not project artwork.
     """
     width, height = 300, 400
     image = Image.new("RGBA", (width, height), color=(0, 0, 0, 0))
@@ -134,6 +139,9 @@ def make_transparent_portrait_image() -> None:
         (width * 0.2, height * 0.6, width * 0.8, height), fill=(80, 80, 200, 128)
     )
     image.save(FIXTURES_DIR / "portrait_transparent.png", format="PNG")
+    # Lossless WebP keeps the same pixel values (including alpha) as the
+    # PNG above, so both formats can be asserted against identically.
+    image.save(FIXTURES_DIR / "portrait_transparent.webp", format="WEBP", lossless=True)
 
 
 def main() -> None:

@@ -28,12 +28,38 @@ def test_load_portrait_normalizes_png_to_rgb() -> None:
     assert image.mode == "RGB"
 
 
+def test_load_portrait_normalizes_webp_to_rgb() -> None:
+    image = load_portrait(str(FIXTURES / "portrait.webp"))
+    assert image.mode == "RGB"
+
+
+def test_load_portrait_webp_matches_png() -> None:
+    # Both fixtures are saved losslessly from the same source pixels, so
+    # WebP should be handled identically to PNG (no format-specific
+    # surprises in the load/normalize path).
+    png_image = load_portrait(str(FIXTURES / "portrait.png"))
+    webp_image = load_portrait(str(FIXTURES / "portrait.webp"))
+    assert webp_image.tobytes() == png_image.tobytes()
+
+
 def test_load_portrait_flattens_transparency_onto_white() -> None:
     image = load_portrait(str(FIXTURES / "portrait_transparent.png"))
     assert image.mode == "RGB"
     # Corner of the source fixture is fully transparent -> should become
     # opaque white, not a garbage/black color from a naive alpha drop.
     assert image.getpixel((0, 0)) == (255, 255, 255)
+
+
+def test_load_portrait_flattens_transparent_webp_onto_white() -> None:
+    image = load_portrait(str(FIXTURES / "portrait_transparent.webp"))
+    assert image.mode == "RGB"
+    assert image.getpixel((0, 0)) == (255, 255, 255)
+
+
+def test_load_portrait_transparent_webp_matches_transparent_png() -> None:
+    png_image = load_portrait(str(FIXTURES / "portrait_transparent.png"))
+    webp_image = load_portrait(str(FIXTURES / "portrait_transparent.webp"))
+    assert webp_image.tobytes() == png_image.tobytes()
 
 
 def test_load_portrait_blends_partial_transparency_toward_white() -> None:

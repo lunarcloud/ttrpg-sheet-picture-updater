@@ -101,6 +101,36 @@ def test_cli_transparent_png_input_flattens_to_white(tmp_path: Path) -> None:
     assert _has_icon(output, "Portrait")
 
 
+def test_cli_webp_input_normalizes(tmp_path: Path) -> None:
+    output = tmp_path / "out.pdf"
+    exit_code = main(
+        [
+            str(FIXTURES / "simple_sheet.pdf"),
+            str(FIXTURES / "portrait.webp"),
+            "-o",
+            str(output),
+        ]
+    )
+    assert exit_code == 0
+    assert output.exists()
+    assert _has_icon(output, "Portrait")
+
+
+def test_cli_transparent_webp_input_flattens_to_white(tmp_path: Path) -> None:
+    output = tmp_path / "out.pdf"
+    exit_code = main(
+        [
+            str(FIXTURES / "simple_sheet.pdf"),
+            str(FIXTURES / "portrait_transparent.webp"),
+            "-o",
+            str(output),
+        ]
+    )
+    assert exit_code == 0
+    assert output.exists()
+    assert _has_icon(output, "Portrait")
+
+
 @pytest.mark.parametrize("fit_mode", ["cover", "contain"])
 def test_cli_fit_modes(tmp_path: Path, fit_mode: str) -> None:
     output = tmp_path / "out.pdf"
