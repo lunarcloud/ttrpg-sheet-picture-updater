@@ -22,7 +22,11 @@ a = Analysis(
     [str(REPO_ROOT / "set_ttrpg_portrait_launcher.py")],
     pathex=[str(REPO_ROOT)],
     binaries=[],
-    datas=[],
+    # Bundles the single committed source icon so gui.py's _app_icon() has
+    # a fallback window icon when no installed icon theme entry is found
+    # (see gui.py's _bundled_icon_path()) — the AppImage has no system-wide
+    # icon theme registration of its own.
+    datas=[(str(REPO_ROOT / "packaging" / "icon" / "icon-source.png"), ".")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

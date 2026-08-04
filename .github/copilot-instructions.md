@@ -86,8 +86,10 @@
   handling (reading/writing AcroForm fields and building the `/MK/I` +
   `/AP/N` icon appearance so the portrait field stays a live, replaceable
   Button field), `Pillow` for image prep, stdlib `argparse` for the CLI.
-  `PyMuPDF` (`fitz`) is a **dev-only** dependency (`requirements-dev.txt`),
-  used only to author the synthetic test fixtures in
-  `tests/fixtures/generate_fixtures.py` — it is not used by the shipped
-  tool at runtime. Avoid adding new dependencies without updating
-  `requirements.txt`/`requirements-dev.txt`.
+  `PyMuPDF` (`fitz`) is a **runtime** dependency (`requirements.txt`) used
+  by `gui.py` to render the sheet preview to an image — Qt's own
+  `QtPdf`/`QPdfView` module does not render AcroForm field appearances
+  (values or icons) at all, so it can't be used for previewing filled-in
+  sheets. It's also used to author the synthetic test fixtures in
+  `tests/fixtures/generate_fixtures.py`. Avoid adding new dependencies
+  without updating `requirements.txt`/`requirements-dev.txt`.

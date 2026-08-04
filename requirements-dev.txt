@@ -2,4 +2,5 @@ pytest
 pyinstaller
 black==26.5.1
 isort==8.0.1
-pymupdf==1.28.0
+# pymupdf now lives in requirements.txt (runtime dep, used by gui.py for
+# preview rendering) — tests/fixtures/generate_fixtures.py uses that copy.
