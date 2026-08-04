@@ -93,14 +93,20 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 
-    try:
-        pdf = open_sheet(args.sheet)
-    except SetTtrpgPortraitError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
-        return 1
+    if args.dpi <= 0:
+        parser.error("--dpi must be greater than 0")
 
     if args.list_fields:
-        _print_field_list(pdf, args.page)
+        try:
+            # Closed via the `with` block: this is the only place the CLI
+            # opens the sheet itself — the embed path below instead lets
+            # `apply_portrait()` open (and close) its own copy, so the
+            # file is never parsed/held open twice.
+            with open_sheet(args.sheet) as pdf:
+                _print_field_list(pdf, args.page)
+        except SetTtrpgPortraitError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
         return 0
 
     if not args.portrait or not args.output:
