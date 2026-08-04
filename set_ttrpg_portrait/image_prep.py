@@ -48,9 +48,7 @@ POINTS_PER_INCH = 72.0
 FitMode = str  # "cover" or "contain"
 
 
-def points_to_pixels(
-    points: tuple[float, float], dpi: float = DEFAULT_ICON_DPI
-) -> tuple[float, float]:
+def points_to_pixels(points: tuple[float, float], dpi: float = DEFAULT_ICON_DPI) -> tuple[float, float]:
     """Convert a ``(width, height)`` pair in PDF points to pixels at ``dpi``."""
     scale = dpi / POINTS_PER_INCH
     return (points[0] * scale, points[1] * scale)
@@ -74,9 +72,7 @@ def load_portrait(path: str) -> Image.Image:
     """
     image = Image.open(path)
     image = ImageOps.exif_transpose(image)
-    if image.mode in ("RGBA", "LA") or (
-        image.mode == "P" and "transparency" in image.info
-    ):
+    if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
         image = image.convert("RGBA")
         background = Image.new("RGB", image.size, WHITE_BACKGROUND)
         background.paste(image, mask=image.getchannel("A"))

@@ -124,15 +124,19 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
    you plan to build `.deb`/`.rpm`/AppImage packages — only needed for
    release builds, not everyday development.
    
-2. `./format.sh` — formats Python with `isort` + `black`. Use `./format.sh
-   --check` (what CI runs) to verify formatting without modifying files.
-   
-3. Run the test suite: `.venv/bin/python -m pytest tests/`.
+2. `./format.sh` — formats Python with `ruff format` (line length 120). Use
+   `./format.sh --check` (what CI runs) to verify formatting without
+   modifying files.
 
-4. Regenerate synthetic test fixtures after changing `tests/fixtures/`
+3. `./lint.sh` — lints Python with `ruff check`. Use `./lint.sh --fix` to
+   auto-apply safe fixes.
+
+4. Run the test suite: `.venv/bin/python -m pytest tests/`.
+
+5. Regenerate synthetic test fixtures after changing `tests/fixtures/`
    generation logic: `.venv/bin/python tests/fixtures/generate_fixtures.py`.
    
-5. All automated tests use the synthetic, IP-free fixtures under
+6. All automated tests use the synthetic, IP-free fixtures under
    `tests/fixtures/` — never commit or reference any real, copyrighted
    third-party character sheet PDFs anywhere in this repo or CI.
 

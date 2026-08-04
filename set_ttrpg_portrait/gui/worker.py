@@ -17,9 +17,7 @@ class ApplyWorker(QObject):
     #: match (message, candidate field names) so the UI can offer a picker.
     ambiguous = pyqtSignal(str, list)
 
-    def __init__(
-        self, sheet_path: str, portrait_path: str, output_path: str, field: str | None
-    ) -> None:
+    def __init__(self, sheet_path: str, portrait_path: str, output_path: str, field: str | None) -> None:
         super().__init__()
         self._sheet_path = sheet_path
         self._portrait_path = portrait_path

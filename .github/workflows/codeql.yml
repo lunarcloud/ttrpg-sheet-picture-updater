@@ -1,0 +1,32 @@
+name: CodeQL
+
+# Static-analysis security/quality scan. Runs on a low-noise monthly cadence
+# (matching this repo's Dependabot cadence — see .github/dependabot.yml)
+# rather than on every push/PR, plus on-demand via workflow_dispatch.
+on:
+  schedule:
+    - cron: "0 6 1 * *" # 06:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze (python)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"

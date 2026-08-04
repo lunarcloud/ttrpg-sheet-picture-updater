@@ -37,8 +37,7 @@ set-ttrpg-portrait-gui = "set_ttrpg_portrait.gui:main"
 dev = [
     "pytest",
     "pyinstaller",
-    "black==26.5.1",
-    "isort==8.0.1",
+    "ruff==0.16.1",
 ]
 
 [build-system]
@@ -57,8 +56,23 @@ include = ["set_ttrpg_portrait*"]
 # included in non-editable installs/wheels.
 "set_ttrpg_portrait.gui" = ["*.ui"]
 
-[tool.isort]
-profile = "black"
+[tool.ruff]
+line-length = 120
+target-version = "py310"
 
-[tool.black]
-line-length = 88
+[tool.ruff.lint]
+# A modern, broader rule set than the old black+isort combo (which only
+# formatted and sorted imports, catching zero actual bugs):
+#   E/W   - pycodestyle
+#   F     - pyflakes (unused imports/vars, undefined names, etc.)
+#   I     - isort (import sorting/grouping)
+#   UP    - pyupgrade (modernize syntax to the target Python version)
+#   B     - flake8-bugbear (common bug-prone patterns)
+#   C4    - flake8-comprehensions (unnecessary/inefficient comprehensions)
+#   SIM   - flake8-simplify (needlessly convoluted code)
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+
+[tool.ruff.format]
+# Matches the line-length/quote-style Black previously enforced, so this
+# change doesn't churn the whole codebase's formatting.
+quote-style = "double"

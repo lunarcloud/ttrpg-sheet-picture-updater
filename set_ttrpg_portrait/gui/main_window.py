@@ -8,6 +8,7 @@ signals/slots and orchestrates processing, so the look can be edited
 
 from __future__ import annotations
 
+import contextlib
 import os
 import shutil
 import sys
@@ -126,10 +127,9 @@ class MainWindow(QMainWindow):
                 if event.mimeData().hasUrls():
                     event.acceptProposedAction()
                     return True
-            elif event.type() == QEvent.Type.Drop:
-                if self._handle_drop(obj, event):
-                    event.acceptProposedAction()
-                    return True
+            elif event.type() == QEvent.Type.Drop and self._handle_drop(obj, event):
+                event.acceptProposedAction()
+                return True
         return super().eventFilter(obj, event)
 
     def _handle_drop(self, target: QObject, event: QEvent) -> bool:
@@ -173,9 +173,7 @@ class MainWindow(QMainWindow):
         self._maybe_auto_process()
 
     def _browse_sheet(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Select fillable PDF sheet", "", "PDF files (*.pdf)"
-        )
+        path, _ = QFileDialog.getOpenFileName(self, "Select fillable PDF sheet", "", "PDF files (*.pdf)")
         if path:
             self._set_sheet(path)
 
@@ -247,9 +245,7 @@ class MainWindow(QMainWindow):
         self.status_label.setText("Processing…")
 
         self._thread = QThread(self)
-        self._worker = ApplyWorker(
-            self._sheet_path, self._portrait_path, temp_path, field
-        )
+        self._worker = ApplyWorker(self._sheet_path, self._portrait_path, temp_path, field)
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
         self._worker.succeeded.connect(self._on_success)
@@ -359,11 +355,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Could not embed portrait", message)
             return
         current = self._selected_field
-        default_index = (
-            self._field_candidates.index(current)
-            if current in self._field_candidates
-            else 0
-        )
+        default_index = self._field_candidates.index(current) if current in self._field_candidates else 0
         field, ok = QInputDialog.getItem(
             self,
             "Multiple portrait fields found",
@@ -395,9 +387,7 @@ class MainWindow(QMainWindow):
         if self._sheet_path:
             base = os.path.splitext(os.path.basename(self._sheet_path))[0]
             default_name = f"{base}-with-portrait.pdf"
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Save sheet as", default_name, "PDF files (*.pdf)"
-        )
+        path, _ = QFileDialog.getSaveFileName(self, "Save sheet as", default_name, "PDF files (*.pdf)")
         if not path:
             return
         try:
@@ -409,10 +399,8 @@ class MainWindow(QMainWindow):
 
     def _cleanup_temp_output(self) -> None:
         if self._temp_output_path and os.path.exists(self._temp_output_path):
-            try:
+            with contextlib.suppress(OSError):
                 os.remove(self._temp_output_path)
-            except OSError:
-                pass
         self._temp_output_path = None
 
     def closeEvent(self, event) -> None:  # noqa: N802 (Qt override signature)

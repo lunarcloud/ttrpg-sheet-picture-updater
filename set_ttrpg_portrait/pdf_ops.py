@@ -34,15 +34,11 @@ def open_sheet(path: str) -> pikepdf.Pdf:
     except FileNotFoundError as exc:
         raise InvalidPdfError(f"Sheet PDF not found: {path!r}") from exc
     except pikepdf.PasswordError as exc:
-        raise InvalidPdfError(
-            f"{path!r} is password-protected; decrypt it first."
-        ) from exc
+        raise InvalidPdfError(f"{path!r} is password-protected; decrypt it first.") from exc
     except pikepdf.PdfError as exc:
         raise InvalidPdfError(f"Could not open PDF {path!r}: {exc}") from exc
     if pdf.is_encrypted:
-        raise InvalidPdfError(
-            f"{path!r} is password-protected/encrypted; decrypt it first."
-        )
+        raise InvalidPdfError(f"{path!r} is password-protected/encrypted; decrypt it first.")
     return pdf
 
 
@@ -54,8 +50,7 @@ def _find_field(pdf: pikepdf.Pdf, name: str) -> pikepdf.Object:
             if "/T" in field and str(field.T) == name:
                 return field
     raise InvalidPdfError(
-        f"Field {name!r} could not be re-located; the document may have "
-        "changed since it was scanned."
+        f"Field {name!r} could not be re-located; the document may have changed since it was scanned."
     )
 
 
@@ -72,9 +67,7 @@ def _widget_annotations(field: pikepdf.Object) -> list[pikepdf.Object]:
     return []
 
 
-def _build_image_xobject(
-    pdf: pikepdf.Pdf, jpeg_bytes: bytes, width: int, height: int
-) -> pikepdf.Object:
+def _build_image_xobject(pdf: pikepdf.Pdf, jpeg_bytes: bytes, width: int, height: int) -> pikepdf.Object:
     image = Stream(pdf, jpeg_bytes)
     image.Type = Name.XObject
     image.Subtype = Name.Image
@@ -86,9 +79,7 @@ def _build_image_xobject(
     return image
 
 
-def _build_icon_form(
-    pdf: pikepdf.Pdf, image_xobject: pikepdf.Object, width: int, height: int
-) -> pikepdf.Object:
+def _build_icon_form(pdf: pikepdf.Pdf, image_xobject: pikepdf.Object, width: int, height: int) -> pikepdf.Object:
     """Build the Form XObject used as the field's ``/MK/I`` icon.
 
     Draws the image at its native pixel size into a unit-per-pixel BBox;
@@ -101,9 +92,7 @@ def _build_icon_form(
     form.Subtype = Name.Form
     form.FormType = 1
     form.BBox = [0, 0, width, height]
-    form.Resources = Dictionary(
-        ProcSet=[Name.PDF, Name.ImageC], XObject=Dictionary(Im0=image_xobject)
-    )
+    form.Resources = Dictionary(ProcSet=[Name.PDF, Name.ImageC], XObject=Dictionary(Im0=image_xobject))
     form.Name = Name("/FRM")
     return form
 
@@ -119,10 +108,7 @@ def _build_appearance_form(
     """Build the field's ``/AP/N`` appearance stream: clip + scale the icon."""
     scale_x = rect_width / image_width
     scale_y = rect_height / image_height
-    content = (
-        f"q\n0 0 {rect_width} {rect_height} re\nW\nn\n"
-        f"{scale_x} 0 0 {scale_y} 0 0 cm\n/FRM Do\nQ\n"
-    ).encode()
+    content = (f"q\n0 0 {rect_width} {rect_height} re\nW\nn\n{scale_x} 0 0 {scale_y} 0 0 cm\n/FRM Do\nQ\n").encode()
     form = Stream(pdf, content)
     form.Type = Name.XObject
     form.Subtype = Name.Form
@@ -160,10 +146,7 @@ def set_field_icon(
     field = _find_field(pdf, candidate.name)
     annotations = _widget_annotations(field)
     if not annotations:
-        raise InvalidPdfError(
-            f"Field {candidate.name!r} has neither /Rect nor /Kids; can't "
-            "place an icon on it."
-        )
+        raise InvalidPdfError(f"Field {candidate.name!r} has neither /Rect nor /Kids; can't place an icon on it.")
     if len(portrait_jpegs) != len(annotations):
         raise InvalidPdfError(
             f"Field {candidate.name!r} has {len(annotations)} widget "
@@ -171,16 +154,14 @@ def set_field_icon(
             "were prepared for it."
         )
 
-    for annotation, jpeg_bytes in zip(annotations, portrait_jpegs):
+    for annotation, jpeg_bytes in zip(annotations, portrait_jpegs, strict=True):
         image_width, image_height = Image.open(io.BytesIO(jpeg_bytes)).size
         image_xobject = _build_image_xobject(pdf, jpeg_bytes, image_width, image_height)
         icon_form = _build_icon_form(pdf, image_xobject, image_width, image_height)
 
         rect = [float(v) for v in annotation.Rect]
         rect_width, rect_height = rect[2] - rect[0], rect[3] - rect[1]
-        appearance_form = _build_appearance_form(
-            pdf, icon_form, rect_width, rect_height, image_width, image_height
-        )
+        appearance_form = _build_appearance_form(pdf, icon_form, rect_width, rect_height, image_width, image_height)
         annotation.MK = Dictionary(I=icon_form, TP=1)
         annotation.AP = Dictionary(N=appearance_form)
 

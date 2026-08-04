@@ -73,11 +73,7 @@ def is_portrait_field_name(name: str) -> bool:
 def _is_pushbutton_field(field: pikepdf.Object) -> bool:
     field_type = field.get("/FT")
     flags = int(field.get("/Ff", 0))
-    return (
-        field_type is not None
-        and str(field_type) == "/Btn"
-        and bool(flags & PDF_PUSHBUTTON_FLAG)
-    )
+    return field_type is not None and str(field_type) == "/Btn" and bool(flags & PDF_PUSHBUTTON_FLAG)
 
 
 def _page_index_by_objgen(pdf: pikepdf.Pdf) -> dict[tuple[int, int], int]:
@@ -95,9 +91,7 @@ def _page_index_by_objgen(pdf: pikepdf.Pdf) -> dict[tuple[int, int], int]:
     return lookup
 
 
-def _field_locations(
-    field: pikepdf.Object, page_lookup: dict[tuple[int, int], int]
-) -> tuple[FieldLocation, ...]:
+def _field_locations(field: pikepdf.Object, page_lookup: dict[tuple[int, int], int]) -> tuple[FieldLocation, ...]:
     """Collect every widget annotation's page/rect for a top-level field.
 
     A field is either "merged" (the field dict is itself the one widget
@@ -123,9 +117,7 @@ def _field_locations(
     return tuple(locations)
 
 
-def find_button_fields(
-    pdf: pikepdf.Pdf, page_index: int | None = None
-) -> list[FieldCandidate]:
+def find_button_fields(pdf: pikepdf.Pdf, page_index: int | None = None) -> list[FieldCandidate]:
     """Return every pushbutton form field in ``pdf``.
 
     If ``page_index`` is given, only widget annotations on that page are
@@ -167,9 +159,7 @@ def find_portrait_field(
         for candidate in all_buttons:
             if candidate.name == field_name:
                 return candidate
-        raise FieldNotFoundError(
-            f"No pushbutton field named {field_name!r} was found on the sheet."
-        )
+        raise FieldNotFoundError(f"No pushbutton field named {field_name!r} was found on the sheet.")
 
     matches = [c for c in all_buttons if is_portrait_field_name(c.name)]
 
@@ -183,8 +173,7 @@ def find_portrait_field(
         match_names = tuple(c.name for c in matches)
         names = ", ".join(repr(name) for name in match_names)
         raise AmbiguousFieldError(
-            f"Multiple candidate portrait fields were found ({names}). "
-            "Rerun with --field NAME to disambiguate.",
+            f"Multiple candidate portrait fields were found ({names}). Rerun with --field NAME to disambiguate.",
             field_names=match_names,
         )
     return matches[0]

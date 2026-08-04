@@ -29,9 +29,7 @@ PDF_WIDGET_TYPE_PUSHBUTTON = fitz.PDF_WIDGET_TYPE_BUTTON
 PAGE_SIZE = (400, 500)
 
 
-def _add_text_field(
-    page: fitz.Page, name: str, rect: tuple[float, float, float, float]
-) -> None:
+def _add_text_field(page: fitz.Page, name: str, rect: tuple[float, float, float, float]) -> None:
     widget = fitz.Widget()
     widget.field_name = name
     widget.field_type = PDF_WIDGET_TYPE_TEXT
@@ -39,9 +37,7 @@ def _add_text_field(
     page.add_widget(widget)
 
 
-def _add_button_field(
-    page: fitz.Page, name: str, rect: tuple[float, float, float, float]
-) -> None:
+def _add_button_field(page: fitz.Page, name: str, rect: tuple[float, float, float, float]) -> None:
     widget = fitz.Widget()
     widget.field_name = name
     widget.field_type = PDF_WIDGET_TYPE_PUSHBUTTON
@@ -106,9 +102,7 @@ def make_multi_location_sheet() -> None:
     page1 = pdf.add_blank_page(page_size=PAGE_SIZE)
     page2 = pdf.add_blank_page(page_size=PAGE_SIZE)
 
-    field = pdf.make_indirect(
-        pikepdf.Dictionary(FT=pikepdf.Name.Btn, Ff=65536, T="Portrait")
-    )
+    field = pdf.make_indirect(pikepdf.Dictionary(FT=pikepdf.Name.Btn, Ff=65536, T="Portrait"))
     widget1 = pdf.make_indirect(
         pikepdf.Dictionary(
             Type=pikepdf.Name.Annot,
@@ -148,9 +142,7 @@ def make_portrait_images() -> None:
     for y in range(height):
         shade = int(120 + 100 * (y / height))
         draw.line([(0, y), (width, y)], fill=(shade, shade, 255))
-    draw.ellipse(
-        (width * 0.25, height * 0.15, width * 0.75, height * 0.55), fill=(240, 200, 160)
-    )
+    draw.ellipse((width * 0.25, height * 0.15, width * 0.75, height * 0.55), fill=(240, 200, 160))
     draw.rectangle((width * 0.2, height * 0.6, width * 0.8, height), fill=(80, 80, 200))
     image.save(FIXTURES_DIR / "portrait.jpg", format="JPEG", quality=90)
     image.save(FIXTURES_DIR / "portrait.png", format="PNG")
@@ -179,9 +171,7 @@ def make_transparent_portrait_image() -> None:
     )
     # Fully transparent border stays transparent (should flatten to white).
     # Semi-transparent rectangle "body" to exercise alpha blending.
-    draw.rectangle(
-        (width * 0.2, height * 0.6, width * 0.8, height), fill=(80, 80, 200, 128)
-    )
+    draw.rectangle((width * 0.2, height * 0.6, width * 0.8, height), fill=(80, 80, 200, 128))
     image.save(FIXTURES_DIR / "portrait_transparent.png", format="PNG")
     # Lossless WebP keeps the same pixel values (including alpha) as the
     # PNG above, so both formats can be asserted against identically.

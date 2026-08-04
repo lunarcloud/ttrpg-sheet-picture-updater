@@ -59,9 +59,7 @@ def main() -> None:
     source = _load_source()
     generate_hicolor_icons(source)
     generate_appimage_icon(source)
-    print(
-        f"Generated icons for sizes {HICOLOR_SIZES} + AppImage icon from {SOURCE_ICON}"
-    )
+    print(f"Generated icons for sizes {HICOLOR_SIZES} + AppImage icon from {SOURCE_ICON}")
 
 
 if __name__ == "__main__":

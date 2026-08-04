@@ -22,10 +22,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for the `set-ttrpg-portrait` CLI."""
     parser = argparse.ArgumentParser(
         prog="set_ttrpg_portrait.py",
-        description=(
-            "Embed a portrait image into a fillable PDF character sheet's "
-            "portrait/photo field."
-        ),
+        description=("Embed a portrait image into a fillable PDF character sheet's portrait/photo field."),
     )
     parser.add_argument("sheet", help="Path to the fillable PDF sheet.")
     parser.add_argument(
@@ -110,9 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not args.portrait or not args.output:
-        parser.error(
-            "portrait and -o/--output are required unless --list-fields is used"
-        )
+        parser.error("portrait and -o/--output are required unless --list-fields is used")
 
     try:
         apply_portrait(

@@ -71,10 +71,7 @@ def test_load_portrait_blends_partial_transparency_toward_white() -> None:
     raw_r, raw_g, raw_b, alpha = source.convert("RGBA").getpixel((x, y))
     assert 0 < alpha < 255
     blended = image.getpixel((x, y))
-    expected = tuple(
-        round(channel * alpha / 255 + 255 * (1 - alpha / 255))
-        for channel in (raw_r, raw_g, raw_b)
-    )
+    expected = tuple(round(channel * alpha / 255 + 255 * (1 - alpha / 255)) for channel in (raw_r, raw_g, raw_b))
     assert blended == expected
 
 

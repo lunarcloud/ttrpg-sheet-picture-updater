@@ -148,9 +148,7 @@ def test_cli_fit_modes(tmp_path: Path, fit_mode: str) -> None:
     assert output.exists()
 
 
-def test_cli_no_candidate_field_fails(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_cli_no_candidate_field_fails(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     output = tmp_path / "out.pdf"
     exit_code = main(
         [
@@ -165,9 +163,7 @@ def test_cli_no_candidate_field_fails(
     assert "Error" in capsys.readouterr().err
 
 
-def test_cli_ambiguous_field_fails(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_cli_ambiguous_field_fails(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     output = tmp_path / "out.pdf"
     exit_code = main(
         [
@@ -196,9 +192,7 @@ def test_cli_list_fields_no_buttons(capsys: pytest.CaptureFixture[str]) -> None:
     assert "No pushbutton fields" in out
 
 
-def test_cli_missing_sheet_file_fails(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_cli_missing_sheet_file_fails(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     exit_code = main(
         [
             str(tmp_path / "does-not-exist.pdf"),

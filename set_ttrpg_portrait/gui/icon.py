@@ -37,12 +37,7 @@ def bundled_icon_path() -> Path | None:
             return candidate
     # This file lives at set_ttrpg_portrait/gui/icon.py, so three `.parent`s
     # reach the repo root.
-    repo_icon = (
-        Path(__file__).resolve().parent.parent.parent
-        / "packaging"
-        / "icon"
-        / BUNDLED_ICON_FILENAME
-    )
+    repo_icon = Path(__file__).resolve().parent.parent.parent / "packaging" / "icon" / BUNDLED_ICON_FILENAME
     if repo_icon.is_file():
         return repo_icon
     return None

@@ -9,7 +9,7 @@
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
-      "label": "Format (black + isort)",
+      "label": "Format (ruff)",
       "type": "shell",
       "command": "${workspaceFolder}/format.sh",
       "problemMatcher": [],
@@ -19,6 +19,13 @@
       "label": "Format check (CI-equivalent)",
       "type": "shell",
       "command": "${workspaceFolder}/format.sh --check",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Lint (ruff)",
+      "type": "shell",
+      "command": "${workspaceFolder}/lint.sh",
       "problemMatcher": [],
       "group": "build"
     },
@@ -45,7 +52,9 @@
       "args": [
         "--severity=warning",
         "${workspaceFolder}/setup.sh",
+        "${workspaceFolder}/run.sh",
         "${workspaceFolder}/format.sh",
+        "${workspaceFolder}/lint.sh",
         "${workspaceFolder}/packaging/build-all.sh",
         "${workspaceFolder}/packaging/build-deb.sh",
         "${workspaceFolder}/packaging/build-rpm.sh",

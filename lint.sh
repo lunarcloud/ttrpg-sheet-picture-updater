@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Formats all Python source in this repo using ruff.
-# Usage: ./format.sh [--check]
-#   --check   Don't modify files; exit non-zero if formatting is needed
-#             (useful for CI).
+# Lints all Python source in this repo using ruff.
+# Usage: ./lint.sh [--fix]
+#   --fix   Automatically apply safe fixes instead of only reporting them.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,8 +13,8 @@ if [ ! -x "$PYTHON" ]; then
     exit 1
 fi
 
-# Directories/files to format. Excludes .venv, dist/build (packaging output),
-# and tests/fixtures (generated PDFs, not Python needing formatting anyway).
+# Directories/files to lint. Excludes .venv, dist/build (packaging output),
+# and tests/fixtures (generated PDFs, not Python needing linting anyway).
 TARGETS=(
     set_ttrpg_portrait.py
     set_ttrpg_portrait_gui.py
@@ -30,16 +29,16 @@ for t in "${TARGETS[@]}"; do
 done
 
 if [ "${#EXISTING_TARGETS[@]}" -eq 0 ]; then
-    echo "No Python targets found yet (${TARGETS[*]}) — nothing to format."
+    echo "No Python targets found yet (${TARGETS[*]}) — nothing to lint."
     exit 0
 fi
 
 MODE_ARGS=()
-if [ "${1:-}" = "--check" ]; then
-    MODE_ARGS=(--check --diff)
+if [ "${1:-}" = "--fix" ]; then
+    MODE_ARGS=(--fix)
 fi
 
-echo "Running ruff format..."
-"$PYTHON" -m ruff format "${MODE_ARGS[@]}" "${EXISTING_TARGETS[@]}"
+echo "Running ruff check..."
+"$PYTHON" -m ruff check "${MODE_ARGS[@]}" "${EXISTING_TARGETS[@]}"
 
-echo "Formatting complete."
+echo "Linting complete."
