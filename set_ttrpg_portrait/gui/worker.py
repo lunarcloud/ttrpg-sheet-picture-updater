@@ -38,4 +38,11 @@ class ApplyWorker(QObject):
         except (SetTtrpgPortraitError, FileNotFoundError) as exc:
             self.failed.emit(str(exc))
             return
+        except Exception as exc:
+            # Anything else is a bug, not an expected user-facing failure —
+            # but it must still emit a terminal signal. Without this, the
+            # GUI's "busy" flag and worker thread would never be released,
+            # leaving the app stuck and unable to shut down cleanly.
+            self.failed.emit(f"Unexpected error: {exc}")
+            return
         self.succeeded.emit(self._output_path)
