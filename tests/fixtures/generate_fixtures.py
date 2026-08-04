@@ -3,9 +3,9 @@
 These fixtures are our own originally-authored content — plain placeholder
 text fields and pushbutton fields we construct ourselves with PyMuPDF, and a
 simple programmatically-drawn image (not a real photo). They deliberately
-mirror the *shapes* of real-world sheets we researched (see plan.md) without
-copying any of their layout, art, or text, so they're safe to commit and run
-in public CI.
+mirror the *shapes* of real-world sheets we researched without copying any
+of their layout, art, or text, so they're safe to commit and run in public
+CI.
 
 This script is run once, output is committed to `tests/fixtures/`; keep it
 around so fixtures can be regenerated/extended later:

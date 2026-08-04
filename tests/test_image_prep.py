@@ -1,4 +1,4 @@
-"""Unit tests for update_portrait.image_prep (Pillow-based fit/encode logic)."""
+"""Unit tests for set_ttrpg_portrait.image_prep (Pillow-based fit/encode logic)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from update_portrait.image_prep import (
+from set_ttrpg_portrait.image_prep import (
     fit_image,
     image_to_jpeg_bytes,
     load_portrait,

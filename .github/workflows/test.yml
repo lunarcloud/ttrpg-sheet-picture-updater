@@ -1,8 +1,8 @@
 name: Test
 
 # Runs the formatter check + pytest suite against our own IP-free synthetic
-# fixtures only (tests/fixtures/). Never depends on examples/ (real,
-# copyrighted third-party sheets) — see .github/copilot-instructions.md.
+# fixtures only (tests/fixtures/). Never depends on any real, copyrighted
+# third-party sheets — see .github/copilot-instructions.md.
 on:
   push:
     branches: [main]

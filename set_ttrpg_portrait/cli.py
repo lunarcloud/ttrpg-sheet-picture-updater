@@ -1,4 +1,4 @@
-"""Command-line interface for update_portrait.
+"""Command-line interface for set_ttrpg_portrait.
 
 Intentionally thin: parses arguments and delegates to `fields`,
 `image_prep`, and `pdf_ops`. No `fitz`/`Pillow` business logic lives here so
@@ -10,17 +10,17 @@ from __future__ import annotations
 import argparse
 import sys
 
-from update_portrait import __version__
-from update_portrait.errors import UpdatePortraitError
-from update_portrait.fields import find_button_fields, find_portrait_field
-from update_portrait.image_prep import prepare_portrait_jpeg
-from update_portrait.pdf_ops import open_sheet, save_sheet, set_field_icon
+from set_ttrpg_portrait import __version__
+from set_ttrpg_portrait.errors import SetTtrpgPortraitError
+from set_ttrpg_portrait.fields import find_button_fields, find_portrait_field
+from set_ttrpg_portrait.image_prep import prepare_portrait_jpeg
+from set_ttrpg_portrait.pdf_ops import open_sheet, save_sheet, set_field_icon
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    """Construct the argparse parser for the `update-portrait` CLI."""
+    """Construct the argparse parser for the `set-ttrpg-portrait` CLI."""
     parser = argparse.ArgumentParser(
-        prog="update_portrait.py",
+        prog="set_ttrpg_portrait.py",
         description=(
             "Embed a portrait image into a fillable PDF character sheet's "
             "portrait/photo field."
@@ -78,13 +78,13 @@ def _print_field_list(pdf, page_index: int | None) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Entry point used by both `update_portrait.py` and `python -m update_portrait`."""
+    """Entry point used by both `set_ttrpg_portrait.py` and `python -m set_ttrpg_portrait`."""
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 
     try:
         pdf = open_sheet(args.sheet)
-    except UpdatePortraitError as exc:
+    except SetTtrpgPortraitError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
@@ -107,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         set_field_icon(pdf, candidate, portrait_bytes)
         save_sheet(pdf, args.output)
-    except UpdatePortraitError as exc:
+    except SetTtrpgPortraitError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     except FileNotFoundError as exc:

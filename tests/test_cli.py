@@ -1,4 +1,4 @@
-"""End-to-end CLI tests, driving update_portrait.cli.main() against fixtures."""
+"""End-to-end CLI tests, driving set_ttrpg_portrait.cli.main() against fixtures."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 import pikepdf
 import pytest
 
-from update_portrait.cli import main
+from set_ttrpg_portrait.cli import main
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

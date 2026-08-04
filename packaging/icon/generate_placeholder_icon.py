@@ -1,11 +1,10 @@
 """Generates the placeholder master icon (safe-zone guide), not real artwork.
 
-Project artwork/branding must only be created or edited by a human (see
-`.github/copilot-instructions.md`). This script produces a *guide* image —
-simple shapes/text marking safe zones — so a human artist knows exactly
-which file to draw the real icon in (`icon-source.png`) and what area is
-safe from cropping/rounding when packagers turn it into a Linux app icon
-(hicolor theme sizes, AppImage icon, etc. — see `generate_icons.py`).
+This script produces a *guide* image — simple shapes/text marking safe
+zones — so whoever draws the real icon knows exactly which file to draw it
+in (`icon-source.png`) and what area is safe from cropping/rounding when
+packagers turn it into a Linux app icon (hicolor theme sizes, AppImage
+icon, etc. — see `generate_icons.py`).
 
 Run once; output is committed as a placeholder until replaced with real art:
 

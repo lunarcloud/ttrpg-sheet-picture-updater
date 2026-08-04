@@ -16,7 +16,7 @@ fi
 
 # Directories/files to format. Excludes .venv, dist/build (packaging output),
 # and tests/fixtures (generated PDFs, not Python needing formatting anyway).
-TARGETS=(update_portrait.py update_portrait tests packaging)
+TARGETS=(set_ttrpg_portrait.py set_ttrpg_portrait tests packaging)
 EXISTING_TARGETS=()
 for t in "${TARGETS[@]}"; do
     [ -e "$SCRIPT_DIR/$t" ] && EXISTING_TARGETS+=("$SCRIPT_DIR/$t")

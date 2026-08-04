@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Builds every Linux distribution artifact (.deb, .rpm, AppImage) and
-# collects them under dist/packages/. See "Distribution / Packaging" in
-# plan.md. Each build-*.sh script freezes its own PyInstaller binary, so
-# they can also be run individually.
+# collects them under dist/packages/. See packaging/README.md for full
+# design rationale. Each build-*.sh script freezes its own PyInstaller
+# binary, so they can also be run individually.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

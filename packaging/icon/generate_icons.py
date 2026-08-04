@@ -2,8 +2,8 @@
 
 Only `icon-source.png` is a committed, hand-edited (or placeholder) file —
 every output here is generated and gitignored, so there's never more than
-one icon file to keep in sync by hand. See "Distribution / Packaging" in
-plan.md for the full rationale.
+one icon file to keep in sync by hand. See packaging/README.md for the
+full rationale.
 
 Run before building `.deb`/`.rpm`/AppImage packages:
 
@@ -24,7 +24,7 @@ SOURCE_ICON = ICON_DIR / "icon-source.png"
 # icon renders correctly in Linux app menus/file managers at every size
 # they request.
 HICOLOR_SIZES = (16, 32, 48, 64, 128, 256)
-APP_ICON_NAME = "update-portrait.png"
+APP_ICON_NAME = "set-ttrpg-portrait.png"
 
 # Size used for the AppImage's own icon.
 APPIMAGE_ICON_SIZE = 256

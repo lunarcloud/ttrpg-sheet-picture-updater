@@ -12,7 +12,7 @@ page content and discarding the field. This is done by building:
      rectangle and scales/positions the icon within it.
 
 This mirrors the exact object structure produced by Acrobat itself (found
-by inspecting real sheets while researching this tool — see plan.md).
+by inspecting real sheets while researching this tool).
 """
 
 from __future__ import annotations
@@ -23,8 +23,8 @@ import pikepdf
 from pikepdf import Dictionary, Name, Stream
 from PIL import Image
 
-from update_portrait.errors import InvalidPdfError
-from update_portrait.fields import FieldCandidate
+from set_ttrpg_portrait.errors import InvalidPdfError
+from set_ttrpg_portrait.fields import FieldCandidate
 
 
 def open_sheet(path: str) -> pikepdf.Pdf:

@@ -1,12 +1,12 @@
-# PyInstaller spec for a reproducible one-file build of update-portrait.
+# PyInstaller spec for a reproducible one-file build of set-ttrpg-portrait.
 #
 # Usage (from repo root, with the project .venv active):
-#   .venv/bin/pyinstaller packaging/update-portrait.spec
+#   .venv/bin/pyinstaller packaging/set-ttrpg-portrait.spec
 #
-# Produces dist/update-portrait — a standalone executable bundling the
+# Produces dist/set-ttrpg-portrait — a standalone executable bundling the
 # interpreter plus pikepdf/Pillow native extensions, so downstream .deb/
 # .rpm/AppImage packages don't need Python or pip installed at all.
-# See "Distribution / Packaging" in plan.md.
+# See packaging/README.md for design rationale.
 
 import pathlib
 
@@ -15,7 +15,7 @@ block_cipher = None
 REPO_ROOT = pathlib.Path(SPECPATH).parent
 
 a = Analysis(
-    [str(REPO_ROOT / "update_portrait.py")],
+    [str(REPO_ROOT / "set_ttrpg_portrait.py")],
     pathex=[str(REPO_ROOT)],
     binaries=[],
     datas=[],
@@ -36,7 +36,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name="update-portrait",
+    name="set-ttrpg-portrait",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

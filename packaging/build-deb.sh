@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds a .deb package from the PyInstaller-frozen binary using nfpm.
-# See "Distribution / Packaging" in plan.md.
+# See packaging/README.md for design rationale.
 #
 # Usage: ./packaging/build-deb.sh
 # Requires: nfpm (https://nfpm.goreleaser.com/), a standalone binary — run
@@ -29,10 +29,13 @@ fi
 stage_files "$STAGE_DIR"
 mkdir -p "$OUT_DIR"
 
-export STAGE_DIR VERSION
-"$NFPM" package \
+# nfpm.yaml's contents[].src paths are fixed, relative to the repo root
+# (nfpm has no env var expansion for content paths) — so run it with the
+# repo root as cwd, matching where stage_files() staged to.
+export VERSION
+(cd "$REPO_ROOT" && "$NFPM" package \
     --config "$SCRIPT_DIR/nfpm.yaml" \
     --packager deb \
-    --target "$OUT_DIR/update-portrait_${VERSION}_amd64.deb"
+    --target "$OUT_DIR/set-ttrpg-portrait_${VERSION}_amd64.deb")
 
-echo "Built $OUT_DIR/update-portrait_${VERSION}_amd64.deb"
+echo "Built $OUT_DIR/set-ttrpg-portrait_${VERSION}_amd64.deb"

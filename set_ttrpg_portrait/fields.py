@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import pikepdf
 
-from update_portrait.errors import (
+from set_ttrpg_portrait.errors import (
     AmbiguousFieldError,
     FieldNotFoundError,
     NoCandidateFieldError,
@@ -24,7 +24,7 @@ from update_portrait.errors import (
 # Bit 17 (value 1<<16 = 65536) of a button field's /Ff flags marks it as a
 # pushbutton (as opposed to a checkbox or radio button, which use other Ff
 # bits). This matches every real-world sheet inspected while researching
-# this tool (see plan.md).
+# this tool.
 PDF_PUSHBUTTON_FLAG = 1 << 16
 
 # Field names that plausibly hold a character portrait/photo, matched

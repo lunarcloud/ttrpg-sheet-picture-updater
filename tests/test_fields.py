@@ -1,4 +1,4 @@
-"""Unit tests for update_portrait.fields (pure heuristic + discovery logic)."""
+"""Unit tests for set_ttrpg_portrait.fields (pure heuristic + discovery logic)."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ from pathlib import Path
 import pikepdf
 import pytest
 
-from update_portrait.errors import (
+from set_ttrpg_portrait.errors import (
     AmbiguousFieldError,
     FieldNotFoundError,
     NoCandidateFieldError,
 )
-from update_portrait.fields import (
+from set_ttrpg_portrait.fields import (
     FieldCandidate,
     FieldLocation,
     find_button_fields,

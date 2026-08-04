@@ -1,8 +1,14 @@
 # Shared nfpm package definition — one config produces both the .deb and
 # .rpm via `nfpm package --packager deb|rpm`. See "Distribution / Packaging"
-# in ../plan.md. Content paths are read from the staged directory built by
-# lib/stage-files.sh (passed in via the STAGE_DIR env var).
-name: update-portrait
+# in packaging/README.md.
+#
+# NOTE: nfpm does NOT expand env vars in contents[].src (only in top-level
+# fields like `version`) — https://github.com/goreleaser/nfpm/issues/719.
+# So content paths below are fixed, relative to the repo root, and
+# build-deb.sh/build-rpm.sh always stage into that exact path
+# (build/stage/) and invoke nfpm with the repo root as their working
+# directory, since nfpm resolves relative `src` paths against its CWD.
+name: set-ttrpg-portrait
 version: ${VERSION}
 arch: amd64
 platform: linux
@@ -14,29 +20,29 @@ homepage: https://github.com/lunarcloud/ttrpg-sheet-picture-updater
 license: MIT
 
 contents:
-  - src: ${STAGE_DIR}/usr/bin/update-portrait
-    dst: /usr/bin/update-portrait
+  - src: build/stage/usr/bin/set-ttrpg-portrait
+    dst: /usr/bin/set-ttrpg-portrait
     file_info:
       mode: 0755
 
-  - src: ${STAGE_DIR}/usr/share/applications/update-portrait.desktop
-    dst: /usr/share/applications/update-portrait.desktop
+  - src: build/stage/usr/share/applications/set-ttrpg-portrait.desktop
+    dst: /usr/share/applications/set-ttrpg-portrait.desktop
 
-  - src: ${STAGE_DIR}/usr/share/doc/update-portrait/README.md
-    dst: /usr/share/doc/update-portrait/README.md
+  - src: build/stage/usr/share/doc/set-ttrpg-portrait/README.md
+    dst: /usr/share/doc/set-ttrpg-portrait/README.md
 
-  - src: ${STAGE_DIR}/usr/share/doc/update-portrait/LICENSE
-    dst: /usr/share/doc/update-portrait/LICENSE
+  - src: build/stage/usr/share/doc/set-ttrpg-portrait/LICENSE
+    dst: /usr/share/doc/set-ttrpg-portrait/LICENSE
 
-  - src: ${STAGE_DIR}/usr/share/icons/hicolor/16x16/apps/update-portrait.png
-    dst: /usr/share/icons/hicolor/16x16/apps/update-portrait.png
-  - src: ${STAGE_DIR}/usr/share/icons/hicolor/32x32/apps/update-portrait.png
-    dst: /usr/share/icons/hicolor/32x32/apps/update-portrait.png
-  - src: ${STAGE_DIR}/usr/share/icons/hicolor/48x48/apps/update-portrait.png
-    dst: /usr/share/icons/hicolor/48x48/apps/update-portrait.png
-  - src: ${STAGE_DIR}/usr/share/icons/hicolor/64x64/apps/update-portrait.png
-    dst: /usr/share/icons/hicolor/64x64/apps/update-portrait.png
-  - src: ${STAGE_DIR}/usr/share/icons/hicolor/128x128/apps/update-portrait.png
-    dst: /usr/share/icons/hicolor/128x128/apps/update-portrait.png
-  - src: ${STAGE_DIR}/usr/share/icons/hicolor/256x256/apps/update-portrait.png
-    dst: /usr/share/icons/hicolor/256x256/apps/update-portrait.png
+  - src: build/stage/usr/share/icons/hicolor/16x16/apps/set-ttrpg-portrait.png
+    dst: /usr/share/icons/hicolor/16x16/apps/set-ttrpg-portrait.png
+  - src: build/stage/usr/share/icons/hicolor/32x32/apps/set-ttrpg-portrait.png
+    dst: /usr/share/icons/hicolor/32x32/apps/set-ttrpg-portrait.png
+  - src: build/stage/usr/share/icons/hicolor/48x48/apps/set-ttrpg-portrait.png
+    dst: /usr/share/icons/hicolor/48x48/apps/set-ttrpg-portrait.png
+  - src: build/stage/usr/share/icons/hicolor/64x64/apps/set-ttrpg-portrait.png
+    dst: /usr/share/icons/hicolor/64x64/apps/set-ttrpg-portrait.png
+  - src: build/stage/usr/share/icons/hicolor/128x128/apps/set-ttrpg-portrait.png
+    dst: /usr/share/icons/hicolor/128x128/apps/set-ttrpg-portrait.png
+  - src: build/stage/usr/share/icons/hicolor/256x256/apps/set-ttrpg-portrait.png
+    dst: /usr/share/icons/hicolor/256x256/apps/set-ttrpg-portrait.png
