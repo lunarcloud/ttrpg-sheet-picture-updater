@@ -4,6 +4,9 @@ Embed a portrait image (JPG/PNG/etc.) into a fillable TTRPG character sheet
 PDF's portrait/photo field — auto-detecting the right field, or letting you
 pick one explicitly.
 
+![](screenshot.jpg)
+
+
 ## To Run
 
 ### Option 1: Pre-Built Release
