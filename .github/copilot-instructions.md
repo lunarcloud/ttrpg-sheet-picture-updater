@@ -39,7 +39,7 @@
   it**. It's committed as `0.0.0`; only `.github/workflows/release.yml`
   overwrites it (via `packaging/lib/compute-version.sh`, tested in
   `tests/test_compute_version.py`), deriving the real version from the
-  `release/<version>` git tag that triggered the release.
+  `release/<version>` or `v<version>` git tag that triggered the release.
 
 ## Dependency updates
 - `.github/dependabot.yml` keeps `pip` and `github-actions` dependencies

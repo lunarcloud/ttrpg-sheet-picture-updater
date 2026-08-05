@@ -12,10 +12,11 @@ name: Release
 # — this produces x86_64 Linux artifacts only.
 #
 # Versioning: releases must be tagged "release/<version>" (e.g.
-# "release/1.2.3"). The very first step derives the actual package version
-# from that tag (packaging/lib/compute-version.sh) and overwrites the
-# committed .VERSION-PLACEHOLDER file with it before anything else builds —
-# see that file and pyproject.toml for why it must never be hand-edited.
+# "release/1.2.3") or "v<version>" (e.g. "v1.2.3"). The very first step
+# derives the actual package version from that tag
+# (packaging/lib/compute-version.sh) and overwrites the committed
+# .VERSION-PLACEHOLDER file with it before anything else builds — see that
+# file and pyproject.toml for why it must never be hand-edited.
 on:
   release:
     types: [published]
@@ -31,15 +32,16 @@ jobs:
           # .VERSION-PLACEHOLDER is committed as "0.0.0" and must never be
           # hand-bumped (see pyproject.toml/set_ttrpg_portrait/__init__.py
           # comments) — for real releases we overwrite it here, before
-          # anything reads it, from the "release/#" tag that triggered this
-          # workflow. packaging/lib/compute-version.sh is pure/testable
-          # (see tests/test_compute_version.py) so this step just wires its
-          # output into the file the rest of the build actually reads.
+          # anything reads it, from the "release/#" or "v#.#.#" tag that
+          # triggered this workflow. packaging/lib/compute-version.sh is
+          # pure/testable (see tests/test_compute_version.py) so this step
+          # just wires its output into the file the rest of the build
+          # actually reads.
           packaging/lib/compute-version.sh "$GITHUB_REF_NAME" > .VERSION-PLACEHOLDER
           version="$(cat .VERSION-PLACEHOLDER)"
           echo "Resolved version: $version"
           if [ "$version" = "0.0.0" ]; then
-            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't match 'release/<version>' — building as 0.0.0."
+            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't match 'release/<version>' or 'v<version>' — building as 0.0.0."
           fi
 
       - uses: actions/setup-python@v7
