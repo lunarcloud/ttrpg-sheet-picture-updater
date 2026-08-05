@@ -2,7 +2,18 @@
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _installed_version
+
+try:
+    # Single source of truth: the VERSION file, read by pyproject.toml's
+    # `[tool.setuptools.dynamic]` at install time. Re-run `./setup.sh` (or
+    # `pip install -e .`) after bumping VERSION so this picks it up.
+    __version__ = _installed_version("set-ttrpg-portrait")
+except PackageNotFoundError:
+    # Only reachable if this package is imported without being installed
+    # (e.g. running from a raw source checkout with no `pip install -e .`).
+    __version__ = "0.0.0+unknown"
 
 from set_ttrpg_portrait.errors import (
     AmbiguousFieldError,
