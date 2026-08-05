@@ -1,19 +1,22 @@
 name: Release
 
-# Builds the .deb/.rpm/AppImage packages (packaging/build-all.sh) and
-# attaches them to the GitHub Release whenever one is published. Runs on
-# ubuntu-latest, matching packaging/README.md's "build natively per
-# architecture" note (pikepdf ships platform-specific wheels) — this
-# produces x86_64 Linux artifacts only.
+# Builds the .deb/.rpm/AppImage packages (packaging/build-all.sh), verifies
+# the .deb/.rpm actually install and run on real Debian/Fedora systems (see
+# "test-deb-install"/"test-rpm-install" below — this is the whole point of
+# packaging/nfpm.yaml's `depends` relying on those distros' own
+# python3-pyqt6/etc packages instead of bundling everything, so it's worth
+# catching a wrong/missing package name before it reaches a release), then
+# attaches all three artifacts to the GitHub Release whenever one is
+# published. Builds on ubuntu-latest, matching packaging/README.md's "build
+# natively per architecture" note (pikepdf ships platform-specific wheels)
+# — this produces x86_64 Linux artifacts only.
 on:
   release:
     types: [published]
 
 jobs:
-  build-and-upload:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
 
@@ -21,12 +24,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      # System libs needed both to *build* the PyInstaller binary (PyQt6's
-      # native Qt modules must import successfully at freeze time) and by
-      # appimagetool (which is itself an AppImage and needs FUSE to run —
-      # avoided below via --appimage-extract-and-run instead of installing
-      # libfuse2).
-      - name: Install system Qt runtime libraries
+      # Only the AppImage is PyInstaller-frozen (the .deb/.rpm ship this
+      # project's plain Python source, relying on the distro's own
+      # python3-pyqt6/etc packages instead — see packaging/README.md), but
+      # PyInstaller still needs to successfully *import* PyQt6 to freeze
+      # it, and appimagetool (itself an AppImage) needs FUSE to run
+      # (avoided below via --appimage-extract-and-run instead of
+      # installing libfuse2).
+      - name: Install system Qt runtime libraries (for the AppImage build)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -53,12 +58,13 @@ jobs:
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -e ".[dev]"
 
-      - name: Fetch packaging tools (nfpm, appimagetool)
+      - name: Fetch packaging tools (nfpm, appimagetool, linuxdeploy)
         run: |
           # shellcheck source=packaging/lib/fetch-tools.sh
           source packaging/lib/fetch-tools.sh
           fetch_nfpm
           fetch_appimagetool
+          fetch_linuxdeploy
 
       - name: Build .deb, .rpm, and AppImage
         env:
@@ -79,7 +85,70 @@ jobs:
             echo "::warning::VERSION file ($version) does not match release tag ($GITHUB_REF_NAME) — attaching packages anyway."
           fi
 
+      - name: Upload built packages as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: dist/packages/*
+          retention-days: 1
+
+  test-deb-install:
+    needs: build
+    runs-on: ubuntu-latest
+    container: debian:stable
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: dist/packages
+
+      - name: Install the .deb and its dependencies
+        run: |
+          apt-get update
+          apt-get install -y ./dist/packages/*.deb
+
+      - name: Smoke test the installed CLI and GUI entry points
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set-ttrpg-portrait --version
+          set-ttrpg-portrait --help
+          timeout 10 set-ttrpg-portrait-gui || [ "$?" -eq 124 ]
+
+  test-rpm-install:
+    needs: build
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: dist/packages
+
+      - name: Install the .rpm and its dependencies
+        run: dnf install -y ./dist/packages/*.rpm
+
+      - name: Smoke test the installed CLI and GUI entry points
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set-ttrpg-portrait --version
+          set-ttrpg-portrait --help
+          timeout 10 set-ttrpg-portrait-gui || [ "$?" -eq 124 ]
+
+  upload:
+    needs: [build, test-deb-install, test-rpm-install]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: dist/packages
+
       - name: Upload packages to the release
         run: gh release upload "$GITHUB_REF_NAME" dist/packages/* --clobber
         env:
           GH_TOKEN: ${{ github.token }}
+

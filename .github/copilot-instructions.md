@@ -57,11 +57,12 @@
   (window-icon lookup), and `app.py` (`main()`, the process entry point).
   Keep the look (`.ui`) and the logic (`.py`) changes separate where
   possible — e.g. add a new widget in the `.ui` file, then wire its
-  behavior in `main_window.py`. If a build bundles the GUI (PyInstaller
-  `.spec` files), remember `main_window.ui` must be added to `datas`
+  behavior in `main_window.py`. Only the AppImage bundles the GUI via
+  PyInstaller (the `.deb`/`.rpm` install this project's plain Python
+  source instead — see `packaging/README.md`); if changing the AppImage's
+  PyInstaller `.spec`, remember `main_window.ui` must be added to `datas`
   alongside `packaging/icon/icon-source.png` — see the existing entries
-  in `packaging/set-ttrpg-portrait-gui.spec` and
-  `packaging/set-ttrpg-portrait-appimage.spec`.
+  in `packaging/set-ttrpg-portrait-appimage.spec`.
 - Use type hints and a short docstring on every public function/module.
   Prefer small, pure functions (no I/O) for logic like field-name matching
   or image-fit math, so they're easy to unit test in isolation.
@@ -97,6 +98,16 @@
 - Before running any `git checkout`/`git restore`/`git reset` (or similar)
   that would discard uncommitted local changes, **stop and confirm with the
   user first** — never silently blow away someone's in-progress work.
+
+## System package installs — AI limits
+- **AI must never run system package manager installs** (`apt`/`apt-get`,
+  `dnf`, `yum`, etc., including via `sudo`) on the developer's own machine.
+  If a system package is needed (e.g. to test the `.deb`/`.rpm`'s
+  `python3-pyqt6`/`python3-pikepdf`/`python3-pil`/`python3-pymupdf`
+  dependencies locally), tell the user which package(s) to install and ask
+  them to run the install themselves. This is separate from CI, where
+  workflow-owned runners installing their own declared dependencies (e.g.
+  `.github/workflows/*.yml`'s `apt-get install` steps) is expected/fine.
 
 ## General conventions
 - Keep the CLI (`set_ttrpg_portrait.py`) dependency-light: `pikepdf` for PDF

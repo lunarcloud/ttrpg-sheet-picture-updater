@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Builds a .deb package from the PyInstaller-frozen binary using nfpm.
-# See packaging/README.md for design rationale.
+# Builds a .deb package from this project's own pure-Python code + a thin
+# launcher script (see packaging/lib/stage-files.sh), using nfpm. Relies on
+# the distro's own python3-pyqt6/python3-pikepdf/python3-pil/python3-pymupdf
+# packages for compiled dependencies, rather than bundling a
+# PyInstaller-frozen binary — see packaging/README.md for design rationale.
 #
 # Usage: ./packaging/build-deb.sh
 # Requires: nfpm (https://nfpm.goreleaser.com/), a standalone binary — run

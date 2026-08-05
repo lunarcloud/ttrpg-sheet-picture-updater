@@ -13,6 +13,10 @@ set -euo pipefail
 NFPM_VERSION="2.47.0"
 NFPM_URL="https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz"
 APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+# linuxdeploy bundles the AppImage's shared-library dependencies (see
+# build-appimage.sh) — also pinned to its "continuous" release, like
+# appimagetool, since neither publishes versioned releases.
+LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
 
 _fetch_tools_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGING_TOOLS_DIR="$(dirname "$_fetch_tools_script_dir")/tools"
@@ -41,8 +45,20 @@ fetch_appimagetool() {
     chmod +x "$PACKAGING_TOOLS_DIR/appimagetool"
 }
 
-# `nfpm`/`appimagetool` resolve to a repo-local packaging/tools/ copy if one
-# exists, else to a PATH-installed copy, else empty (caller should error).
+fetch_linuxdeploy() {
+    if [ -x "$PACKAGING_TOOLS_DIR/linuxdeploy" ]; then
+        echo "linuxdeploy already present at $PACKAGING_TOOLS_DIR/linuxdeploy"
+        return 0
+    fi
+    echo "Downloading linuxdeploy to $PACKAGING_TOOLS_DIR/linuxdeploy ..."
+    mkdir -p "$PACKAGING_TOOLS_DIR"
+    curl -fsSL -o "$PACKAGING_TOOLS_DIR/linuxdeploy" "$LINUXDEPLOY_URL"
+    chmod +x "$PACKAGING_TOOLS_DIR/linuxdeploy"
+}
+
+# `nfpm`/`appimagetool`/`linuxdeploy` resolve to a repo-local
+# packaging/tools/ copy if one exists, else to a PATH-installed copy, else
+# empty (caller should error).
 resolve_nfpm() {
     if [ -x "$PACKAGING_TOOLS_DIR/nfpm" ]; then
         echo "$PACKAGING_TOOLS_DIR/nfpm"
@@ -56,5 +72,13 @@ resolve_appimagetool() {
         echo "$PACKAGING_TOOLS_DIR/appimagetool"
     else
         command -v appimagetool || true
+    fi
+}
+
+resolve_linuxdeploy() {
+    if [ -x "$PACKAGING_TOOLS_DIR/linuxdeploy" ]; then
+        echo "$PACKAGING_TOOLS_DIR/linuxdeploy"
+    else
+        command -v linuxdeploy || true
     fi
 }

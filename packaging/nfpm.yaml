@@ -30,6 +30,17 @@ contents:
     file_info:
       mode: 0755
 
+  # This project's own pure-Python code (staged by
+  # packaging/lib/stage-files.sh's `pip install --no-deps --target=...`,
+  # including its generated .dist-info so `importlib.metadata.version(...)`
+  # — the single source of truth for `set_ttrpg_portrait.__version__` —
+  # keeps working once installed). Kept out of the distro's own versioned
+  # site-packages/dist-packages tree; the two launchers above add this
+  # directory to `sys.path` themselves. See packaging/README.md.
+  - src: build/stage/usr/share/set-ttrpg-portrait/lib/
+    dst: /usr/share/set-ttrpg-portrait/lib/
+    type: tree
+
   - src: build/stage/usr/share/applications/set-ttrpg-portrait-gui.desktop
     dst: /usr/share/applications/set-ttrpg-portrait-gui.desktop
 
@@ -51,3 +62,33 @@ contents:
     dst: /usr/share/icons/hicolor/128x128/apps/set-ttrpg-portrait.png
   - src: build/stage/usr/share/icons/hicolor/256x256/apps/set-ttrpg-portrait.png
     dst: /usr/share/icons/hicolor/256x256/apps/set-ttrpg-portrait.png
+
+# The .deb/.rpm launchers above are plain Python scripts (NOT PyInstaller-
+# frozen — that's only the AppImage, which has no host package manager to
+# lean on) — they import PyQt6/pikepdf/Pillow/PyMuPDF from the distro's own
+# packages at runtime, so those need to be declared here. Doing it this way
+# means we don't need to hand-maintain the transitive closure of lower-level
+# system libraries (X11/XCB, EGL/GL, D-Bus, fontconfig, freetype, glib,
+# Wayland, ...) ourselves — apt/dnf already do that automatically via each
+# of these packages' own declared dependencies.
+#
+# nfpm has no distro-agnostic dependency mechanism (its `depends:` is a
+# plain list of strings passed straight to dpkg/rpm — see nfpm's own
+# jsonschema, `$defs.Overridables.properties.depends`), so the same
+# Python package needs a different declared system-package name per format.
+overrides:
+  deb:
+    depends:
+      - python3 (>= 3.10)
+      - python3-pyqt6 # PyQt6
+      - python3-pikepdf # pikepdf
+      - python3-pil # Pillow
+      - python3-pymupdf # pymupdf (a.k.a. fitz), used for the GUI's sheet preview
+  rpm:
+    depends:
+      - python3 >= 3.10
+      - python3-pyqt6 # PyQt6
+      - python3-pikepdf # pikepdf
+      - python3-pillow # Pillow
+      - python3-PyMuPDF # pymupdf (a.k.a. fitz), used for the GUI's sheet preview
+

@@ -6,27 +6,31 @@ pick one explicitly.
 
 ## To Run
 
-### Option 1: Pre-Built Release (no Python needed)
+### Option 1: Pre-Built Release
 
 Download the appropriate package from a [release](../../releases) and
 install it:
 
 ```sh
-# Debian/Ubuntu
+# Debian/Ubuntu (installs python3-pyqt6/python3-pikepdf/python3-pil/python3-pymupdf automatically)
 sudo apt install ./set-ttrpg-portrait_<version>_amd64.deb
 
-# Fedora/RHEL
-sudo rpm -i set-ttrpg-portrait-<version>-1.x86_64.rpm
+# Fedora/RHEL (installs python3-pyqt6/python3-pikepdf/python3-pillow/python3-PyMuPDF automatically)
+sudo dnf install ./set-ttrpg-portrait-<version>-1.x86_64.rpm
 
-# AppImage (any distro)
+# AppImage (any distro, no Python/system packages needed — fully self-contained)
 chmod +x set-ttrpg-portrait-<version>-x86_64.AppImage
 ```
 
-The `.deb`/`.rpm` install two separate commands — the CLI
-(`set-ttrpg-portrait`) and the GUI (`set-ttrpg-portrait-gui`, also added to
-your desktop's application menu). The AppImage bundles both in one
-executable: double-click it (or run it with no arguments) for the GUI, or
-pass it CLI arguments from a terminal:
+The `.deb`/`.rpm` are plain Python, relying on your distro's own Python +
+PyQt6/pikepdf/Pillow/PyMuPDF packages (pulled in automatically by
+`apt`/`dnf`) rather than bundling their own copies — see
+`packaging/README.md` for why. They install two separate commands — the
+CLI (`set-ttrpg-portrait`) and the GUI (`set-ttrpg-portrait-gui`, also
+added to your desktop's application menu). The AppImage instead bundles
+everything (interpreter, Qt, all dependencies) into one self-contained
+executable that needs nothing pre-installed: double-click it (or run it
+with no arguments) for the GUI, or pass it CLI arguments from a terminal:
 ```
 ./set-ttrpg-portrait-<version>-x86_64.AppImage --help
 ./set-ttrpg-portrait-<version>-x86_64.AppImage SHEET.pdf PORTRAIT.jpg -o OUTPUT.pdf
@@ -119,10 +123,10 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
 
 1. `./setup.sh` — creates `.venv` and installs this project editable with
    its `dev` extra (`pip install -e ".[dev]"`, from `pyproject.toml`). It
-   will also optionally offer to fetch `nfpm`/`appimagetool` (standalone
-   binaries, cached in `packaging/tools/`, never installed system-wide) if
-   you plan to build `.deb`/`.rpm`/AppImage packages — only needed for
-   release builds, not everyday development.
+   will also optionally offer to fetch `nfpm`/`appimagetool`/`linuxdeploy`
+   (standalone binaries, cached in `packaging/tools/`, never installed
+   system-wide) if you plan to build `.deb`/`.rpm`/AppImage packages — only
+   needed for release builds, not everyday development.
    
 2. `./format.sh` — formats Python with `ruff format` (line length 120). Use
    `./format.sh --check` (what CI runs) to verify formatting without
@@ -134,9 +138,10 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
 4. `./package-updates.sh` — checks pinned dependency versions for updates:
    the pip packages in `pyproject.toml` (also covered automatically, on a
    monthly cadence, by Dependabot — see `.github/dependabot.yml`) plus the
-   `nfpm`/`appimagetool` build tools in `packaging/lib/fetch-tools.sh`,
-   which Dependabot can't see since they're plain bash variables, not a
-   manifest file. Add `--update` to rewrite outdated pins in place.
+   `nfpm`/`appimagetool`/`linuxdeploy` build tools in
+   `packaging/lib/fetch-tools.sh`, which Dependabot can't see since they're
+   plain bash variables, not a manifest file. Add `--update` to rewrite
+   outdated pins in place.
 
 5. Run the test suite: `.venv/bin/python -m pytest tests/`.
 

@@ -1,15 +1,28 @@
-# PyInstaller spec for a reproducible one-file build of the AppImage's
+# PyInstaller spec for a reproducible one-dir build of the AppImage's
 # combined CLI+GUI launcher binary (set-ttrpg-portrait-launcher).
 #
 # Usage (from repo root, with the project .venv active):
 #   .venv/bin/pyinstaller packaging/set-ttrpg-portrait-appimage.spec
 #
-# Produces dist/set-ttrpg-portrait-launcher — bundles PyQt6 + pikepdf +
-# Pillow, since the AppImage ships a single executable that defaults to the
-# GUI when given no arguments (see set_ttrpg_portrait/launcher.py) but
-# behaves like the CLI otherwise. Kept as its own spec/binary name (rather
-# than reusing set-ttrpg-portrait.spec's output name) so it never collides
-# with the separate, lighter-weight CLI binary built for .deb/.rpm. See
+# Produces dist/set-ttrpg-portrait-launcher/ (a directory, NOT a single
+# file) — bundles PyQt6 + pikepdf + Pillow, since the AppImage ships a
+# combined executable that defaults to the GUI when given no arguments
+# (see set_ttrpg_portrait/launcher.py) but behaves like the CLI otherwise.
+#
+# Deliberately one-dir rather than one-file (unlike set-ttrpg-portrait.spec
+# and set-ttrpg-portrait-gui.spec, which target .deb/.rpm and can afford
+# one-file's slower startup/self-extraction): `linuxdeploy`
+# (packaging/build-appimage.sh) needs PyQt6's bundled Qt6 shared
+# libraries/plugins to exist as real on-disk files at build time so it can
+# `ldd` them and bundle their own missing system-library dependencies
+# (libxcb-cursor, libdbus-1, etc.) into the AppImage. One-file mode hides
+# all of that inside a compressed archive appended to the executable,
+# invisible to `ldd` until runtime self-extraction — too late for
+# linuxdeploy to inspect at build time.
+#
+# Kept as its own spec/binary name (rather than reusing
+# set-ttrpg-portrait.spec's output name) so it never collides with the
+# separate, lighter-weight CLI binary built for .deb/.rpm. See
 # packaging/README.md for design rationale.
 
 import pathlib
@@ -47,10 +60,8 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="set-ttrpg-portrait-launcher",
     debug=False,
     bootloader_ignore_signals=False,
@@ -62,4 +73,14 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    name="set-ttrpg-portrait-launcher",
 )
