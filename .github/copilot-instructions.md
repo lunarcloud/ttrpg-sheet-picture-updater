@@ -119,10 +119,15 @@
   handling (reading/writing AcroForm fields and building the `/MK/I` +
   `/AP/N` icon appearance so the portrait field stays a live, replaceable
   Button field), `Pillow` for image prep, stdlib `argparse` for the CLI.
-  `PyMuPDF` (`fitz`) is a **runtime** dependency (`pyproject.toml`) used
-  by `gui.py` to render the sheet preview to an image — Qt's own
+  `PyMuPDF` is a **runtime** dependency (`pyproject.toml`) used by
+  `gui.py` to render the sheet preview to an image — Qt's own
   `QtPdf`/`QPdfView` module does not render AcroForm field appearances
   (values or icons) at all, so it can't be used for previewing filled-in
   sheets. It's also used to author the synthetic test fixtures in
-  `tests/fixtures/generate_fixtures.py`. Avoid adding new dependencies
-  without updating `pyproject.toml`.
+  `tests/fixtures/generate_fixtures.py`. Always `import pymupdf as fitz`
+  (never the bare legacy `import fitz`): Debian/Ubuntu split the `fitz`
+  alias out of `python3-pymupdf` into a separate `python3-fitz` package,
+  while `pymupdf` is the module name PyMuPDF itself recommends and is
+  guaranteed present everywhere PyMuPDF is installed (pip, Fedora's
+  `python3-PyMuPDF`, Debian/Ubuntu's `python3-pymupdf`). Avoid adding new
+  dependencies without updating `pyproject.toml`.

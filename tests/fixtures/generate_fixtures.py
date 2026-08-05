@@ -17,8 +17,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import fitz
 import pikepdf
+import pymupdf as fitz  # `pymupdf`, not the legacy `fitz` alias — see gui/preview.py's import comment
 from PIL import Image, ImageDraw
 
 FIXTURES_DIR = Path(__file__).parent

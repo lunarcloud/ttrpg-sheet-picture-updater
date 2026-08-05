@@ -1,14 +1,20 @@
 """Renders a fillable PDF sheet's pages to an in-memory preview image.
 
-Uses PyMuPDF (`fitz`) rather than Qt's own `QtPdf`/`QPdfView` module:
-QtPdf does not render AcroForm field appearances at all (neither filled-in
-values nor an embedded portrait icon), so it can't show the result of
-what this tool just did.
+Uses PyMuPDF rather than Qt's own `QtPdf`/`QPdfView` module: QtPdf does not
+render AcroForm field appearances at all (neither filled-in values nor an
+embedded portrait icon), so it can't show the result of what this tool
+just did.
 """
 
 from __future__ import annotations
 
-import fitz
+# `pymupdf` (not the legacy `fitz` alias) so this works with just the
+# distro's `python3-pymupdf` package on Debian/Ubuntu — `fitz` there needs
+# a *separate* `python3-fitz` compat package we'd otherwise have to declare
+# as a dependency. `pymupdf` is PyMuPDF's own recommended/future-proof
+# import name and is provided everywhere PyMuPDF itself is (pip, Fedora's
+# python3-PyMuPDF, and Debian/Ubuntu's python3-pymupdf).
+import pymupdf as fitz
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPainter, QPixmap
 
