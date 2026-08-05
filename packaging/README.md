@@ -73,11 +73,17 @@ jobs install and smoke-test the built packages in real `debian:stable`/
 `fedora:latest` containers on every release, to catch a wrong/missing
 system package name before it ships.
 
-Version numbers come from the single `VERSION` file at the repo root —
-`pyproject.toml` reads it dynamically (`version = { file = "VERSION" }`),
+Version numbers come from `.VERSION-PLACEHOLDER` at the repo root —
+`pyproject.toml` reads it dynamically (`version = { file = ".VERSION-PLACEHOLDER" }`),
 and `set_ttrpg_portrait.__version__` resolves it via `importlib.metadata` at
-runtime, so bumping `VERSION` alone (no other file) keeps the CLI, GUI,
-and package version fields all in sync automatically.
+runtime. **Never hand-edit that file** — it's committed as `0.0.0` (what
+local dev installs and non-release CI runs always see) and is only ever
+overwritten, in `.github/workflows/release.yml`'s first step, by
+`packaging/lib/compute-version.sh`, which derives the real version from the
+`release/<version>` git tag that triggered the release (e.g. tag
+`release/1.2.3` → version `1.2.3`; anything else → `0.0.0`, with a
+workflow warning). See `tests/test_compute_version.py` for that script's
+test coverage.
 
 ## Icon
 

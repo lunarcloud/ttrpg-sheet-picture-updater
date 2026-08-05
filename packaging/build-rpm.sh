@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 STAGE_DIR="$REPO_ROOT/build/stage"
 OUT_DIR="$REPO_ROOT/dist/packages"
-VERSION="$(tr -d ' \t\n\r' < "$REPO_ROOT/VERSION")"
+VERSION="$(tr -d ' \t\n\r' < "$REPO_ROOT/.VERSION-PLACEHOLDER")"
 
 # shellcheck source=lib/fetch-tools.sh
 source "$SCRIPT_DIR/lib/fetch-tools.sh"

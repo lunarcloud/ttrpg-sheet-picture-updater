@@ -203,3 +203,34 @@ def test_cli_missing_sheet_file_fails(tmp_path: Path, capsys: pytest.CaptureFixt
     )
     assert exit_code == 1
     assert "Error" in capsys.readouterr().err
+
+
+def test_cli_version_reports_actual_installed_version(capsys: pytest.CaptureFixture[str]) -> None:
+    """`--version` should print whatever set_ttrpg_portrait.__version__ actually resolved to.
+
+    Exercises the real, unmocked import chain (importlib.metadata -> the
+    installed package's .dist-info, ultimately from .VERSION-PLACEHOLDER at
+    build time) so a break in that wiring — not just a wrong VERSION-file
+    value — would be caught here.
+    """
+    from set_ttrpg_portrait import __version__
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--version"])
+    assert exc_info.value.code == 0
+    assert capsys.readouterr().out.strip() == f"set_ttrpg_portrait.py {__version__}"
+
+
+def test_cli_version_reflects_whatever_version_is_resolved(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`--version`'s output must track `__version__`, not a value baked in at import time.
+
+    Patches the name `cli.py` actually reads so this fails if `--version`'s
+    `argparse` action is ever changed to capture `__version__` too early
+    (e.g. at parser-build time instead of at `--version` invocation time).
+    """
+    monkeypatch.setattr("set_ttrpg_portrait.cli.__version__", "9.9.9-test")
+    with pytest.raises(SystemExit):
+        main(["--version"])
+    assert capsys.readouterr().out.strip() == "set_ttrpg_portrait.py 9.9.9-test"

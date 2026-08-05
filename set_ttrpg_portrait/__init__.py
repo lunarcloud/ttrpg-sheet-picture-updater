@@ -6,9 +6,12 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _installed_version
 
 try:
-    # Single source of truth: the VERSION file, read by pyproject.toml's
-    # `[tool.setuptools.dynamic]` at install time. Re-run `./setup.sh` (or
-    # `pip install -e .`) after bumping VERSION so this picks it up.
+    # Single source of truth: .VERSION-PLACEHOLDER, read by pyproject.toml's
+    # `[tool.setuptools.dynamic]` at install time. For real releases, CI
+    # overwrites that file from the "release/#" git tag before building
+    # (see packaging/lib/compute-version.sh) — locally it's always "0.0.0".
+    # Re-run `./setup.sh` (or `pip install -e .`) after it changes so this
+    # picks it up.
     __version__ = _installed_version("set-ttrpg-portrait")
 except PackageNotFoundError:
     # Only reachable if this package is imported without being installed

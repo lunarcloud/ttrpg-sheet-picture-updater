@@ -10,6 +10,12 @@ name: Release
 # published. Builds on ubuntu-latest, matching packaging/README.md's "build
 # natively per architecture" note (pikepdf ships platform-specific wheels)
 # — this produces x86_64 Linux artifacts only.
+#
+# Versioning: releases must be tagged "release/<version>" (e.g.
+# "release/1.2.3"). The very first step derives the actual package version
+# from that tag (packaging/lib/compute-version.sh) and overwrites the
+# committed .VERSION-PLACEHOLDER file with it before anything else builds —
+# see that file and pyproject.toml for why it must never be hand-edited.
 on:
   release:
     types: [published]
@@ -19,6 +25,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      - name: Compute version from the release tag
+        run: |
+          # .VERSION-PLACEHOLDER is committed as "0.0.0" and must never be
+          # hand-bumped (see pyproject.toml/set_ttrpg_portrait/__init__.py
+          # comments) — for real releases we overwrite it here, before
+          # anything reads it, from the "release/#" tag that triggered this
+          # workflow. packaging/lib/compute-version.sh is pure/testable
+          # (see tests/test_compute_version.py) so this step just wires its
+          # output into the file the rest of the build actually reads.
+          packaging/lib/compute-version.sh "$GITHUB_REF_NAME" > .VERSION-PLACEHOLDER
+          version="$(cat .VERSION-PLACEHOLDER)"
+          echo "Resolved version: $version"
+          if [ "$version" = "0.0.0" ]; then
+            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't match 'release/<version>' — building as 0.0.0."
+          fi
 
       - uses: actions/setup-python@v7
         with:
@@ -73,17 +95,6 @@ jobs:
           # extract-and-run instead (no FUSE available on GH runners).
           APPIMAGE_EXTRACT_AND_RUN: "1"
         run: ./packaging/build-all.sh
-
-      - name: Verify VERSION matches the release tag
-        run: |
-          version="$(tr -d ' \t\n\r' < VERSION)"
-          # Tags are named "release/1.2.3" (optionally "v1.2.3" or a bare
-          # "1.2.3"); strip whichever prefix is present to get the version.
-          tag="${GITHUB_REF_NAME#release/}"
-          tag="${tag#v}"
-          if [ "$version" != "$tag" ]; then
-            echo "::warning::VERSION file ($version) does not match release tag ($GITHUB_REF_NAME) — attaching packages anyway."
-          fi
 
       - name: Upload built packages as a workflow artifact
         uses: actions/upload-artifact@v4

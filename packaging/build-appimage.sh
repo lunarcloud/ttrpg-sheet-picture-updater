@@ -15,7 +15,7 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 APPDIR="$REPO_ROOT/build/set-ttrpg-portrait.AppDir"
 OUT_DIR="$REPO_ROOT/dist/packages"
 PYTHON="$REPO_ROOT/.venv/bin/python"
-VERSION="$(tr -d ' \t\n\r' < "$REPO_ROOT/VERSION")"
+VERSION="$(tr -d ' \t\n\r' < "$REPO_ROOT/.VERSION-PLACEHOLDER")"
 LAUNCHER_NAME="set-ttrpg-portrait-launcher"
 
 # shellcheck source=lib/fetch-tools.sh

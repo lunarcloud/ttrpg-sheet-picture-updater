@@ -45,7 +45,12 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = { file = "VERSION" }
+# DO NOT hand-edit .VERSION-PLACEHOLDER: for real releases it's overwritten
+# during the release workflow by packaging/lib/compute-version.sh, which
+# derives the actual version from the "release/#" git tag. Its committed
+# value ("0.0.0") is only what local dev installs/tests/non-release CI
+# runs ever see.
+version = { file = ".VERSION-PLACEHOLDER" }
 
 [tool.setuptools.packages.find]
 include = ["set_ttrpg_portrait*"]

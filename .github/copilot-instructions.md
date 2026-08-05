@@ -31,10 +31,15 @@
   require secrets or third-party copyrighted assets.
 
 ## Packaging
-- Linux distribution artifacts (`.deb`, `.rpm`, AppImage) are built from a
-  PyInstaller-frozen binary via scripts under `packaging/` — see
-  `packaging/README.md` before changing build scripts, versioning
-  (`VERSION` file), or packaging metadata.
+- Linux distribution artifacts (`.deb`, `.rpm`, AppImage) are built via
+  scripts under `packaging/` — see `packaging/README.md` before changing
+  build scripts, versioning, or packaging metadata.
+- Versioning: `.VERSION-PLACEHOLDER` at the repo root is the single source
+  of truth read by `pyproject.toml`'s dynamic version — **never hand-edit
+  it**. It's committed as `0.0.0`; only `.github/workflows/release.yml`
+  overwrites it (via `packaging/lib/compute-version.sh`, tested in
+  `tests/test_compute_version.py`), deriving the real version from the
+  `release/<version>` git tag that triggered the release.
 
 ## Dependency updates
 - `.github/dependabot.yml` keeps `pip` and `github-actions` dependencies
