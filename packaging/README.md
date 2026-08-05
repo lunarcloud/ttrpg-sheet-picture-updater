@@ -17,6 +17,16 @@ Two different strategies, chosen per-format:
   installable) on the target system — reasonable for the desktop
   Linux distros this targets, but unlike the AppImage below, not fully
   self-contained.
+  - One wrinkle: loading `main_window.ui` at runtime normally needs
+    `PyQt6.uic`, but Debian/Ubuntu split that submodule out of
+    `python3-pyqt6` into the separate (if confusingly-named)
+    `pyqt6-dev-tools` package. Rather than adding that as a runtime
+    dependency, `stage-files.sh` precompiles `main_window.ui` into a plain
+    `main_window_ui.py` at package-build time via `pyuic6` (which ships as
+    part of the `PyQt6` *pip* package itself — no extra build tool needed),
+    so the installed `.deb`/`.rpm` never needs `PyQt6.uic` at all. See
+    `set_ttrpg_portrait/gui/main_window.py`'s module docstring and
+    `tests/test_gui_precompiled_ui.py`.
 - **AppImage** is fully self-contained: a PyInstaller-frozen one-dir build
   (see `set-ttrpg-portrait-appimage.spec`) plus `linuxdeploy` to bundle the
   handful of system libraries PyInstaller alone misses (Qt's own

@@ -50,6 +50,23 @@ stage_files() {
         --target "$stage_dir/usr/share/set-ttrpg-portrait/lib" \
         "$REPO_ROOT"
 
+    # Precompile main_window.ui into a plain .py module (pyuic6, which ships
+    # as part of the `PyQt6` pip package itself — no extra build tool
+    # needed) so the installed package never needs `PyQt6.uic` at runtime.
+    # Debian/Ubuntu split that submodule out of `python3-pyqt6` into the
+    # separate `pyqt6-dev-tools` package; precompiling avoids adding it as
+    # a runtime dependency. See set_ttrpg_portrait/gui/main_window.py's
+    # module docstring for how it picks this up when present.
+    echo "Precompiling main_window.ui (avoids needing PyQt6.uic at runtime)..."
+    local pyuic6
+    pyuic6="$(dirname "$PYTHON")/pyuic6"
+    if [ ! -x "$pyuic6" ]; then
+        echo "pyuic6 not found next to $PYTHON — run ./setup.sh first." >&2
+        exit 1
+    fi
+    "$pyuic6" -o "$stage_dir/usr/share/set-ttrpg-portrait/lib/set_ttrpg_portrait/gui/main_window_ui.py" \
+        "$REPO_ROOT/set_ttrpg_portrait/gui/main_window.ui"
+
     # Source files carry a .py extension so ruff/format.sh pick them up, but
     # the installed command names must not (they're run as `set-ttrpg-portrait`,
     # not `set-ttrpg-portrait.py`).

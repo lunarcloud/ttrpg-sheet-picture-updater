@@ -1,9 +1,22 @@
 """`MainWindow`: business logic wiring for the GUI.
 
-The visual layout itself lives in `main_window.ui` (a Qt Designer form,
-loaded at runtime via `PyQt6.uic.loadUi()`) — this module only wires up
-signals/slots and orchestrates processing, so the look can be edited
-(in Qt Designer or by hand) independently of this logic.
+The visual layout itself lives in `main_window.ui` (a Qt Designer form) —
+this module only wires up signals/slots and orchestrates processing, so the
+look can be edited (in Qt Designer or by hand) independently of this logic.
+
+Loading that form at runtime normally needs `PyQt6.uic`, but Debian/Ubuntu
+split that submodule out of their `python3-pyqt6` package into the
+much-heavier-sounding (but actually tiny) `pyqt6-dev-tools` — so to keep the
+`.deb`/`.rpm`'s dependency list to just `python3-pyqt6` itself,
+`packaging/lib/stage-files.sh` precompiles `main_window.ui` into a plain
+`main_window_ui.py` (via `pyuic6`, which ships as part of the `PyQt6` pip
+package itself — no extra build tool needed) and stages that instead. If
+that generated module is importable, `MainWindow` mixes it in as
+`Ui_MainWindow` (the standard PyQt multiple-inheritance pattern) and calls
+`self.setupUi(self)`, never touching `PyQt6.uic`; otherwise (plain source
+checkout, `pip install -e .`, or the PyInstaller-frozen AppImage — all of
+which have the full `PyQt6.uic` available) it falls back to
+`uic.loadUi()` reading the `.ui` file directly, exactly as before.
 """
 
 from __future__ import annotations
@@ -15,7 +28,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-from PyQt6 import uic
 from PyQt6.QtCore import QEvent, QObject, QThread
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox
@@ -24,10 +36,24 @@ from set_ttrpg_portrait import __version__
 from set_ttrpg_portrait.gui import preview
 from set_ttrpg_portrait.gui.worker import ApplyWorker
 
+try:
+    # Only present when precompiled by packaging/lib/stage-files.sh (see
+    # module docstring) — not committed, not present in a source checkout.
+    from set_ttrpg_portrait.gui.main_window_ui import Ui_MainWindow
+
+    _HAS_PRECOMPILED_UI = True
+except ImportError:
+    # Placeholder base class so `class MainWindow(QMainWindow, Ui_MainWindow)`
+    # below is always valid; unused at runtime when this branch is taken,
+    # since `_HAS_PRECOMPILED_UI` guards the only place it would matter.
+    Ui_MainWindow = object
+    _HAS_PRECOMPILED_UI = False
+
 #: Suffix used for the throwaway preview copy of the sheet.
 _TEMP_SUFFIX = ".set-ttrpg-portrait-preview.pdf"
 
-#: Qt Designer form filename, loaded at runtime (see module docstring).
+#: Qt Designer form filename, loaded at runtime when no precompiled
+#: `main_window_ui.py` is available (see module docstring).
 _UI_FILENAME = "main_window.ui"
 
 #: Extension used to recognize a dropped fillable sheet.
@@ -55,10 +81,15 @@ def _ui_file_path() -> Path:
     return Path(__file__).resolve().parent / _UI_FILENAME
 
 
-class MainWindow(QMainWindow):
+class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self) -> None:
         super().__init__()
-        uic.loadUi(str(_ui_file_path()), self)
+        if _HAS_PRECOMPILED_UI:
+            self.setupUi(self)
+        else:
+            from PyQt6 import uic
+
+            uic.loadUi(str(_ui_file_path()), self)
         self.setWindowTitle(f"Set TTRPG Portrait {__version__}")
 
         self._sheet_path: str | None = None
