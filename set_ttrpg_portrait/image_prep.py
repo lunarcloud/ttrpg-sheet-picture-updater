@@ -133,10 +133,7 @@ def load_portrait(path: str) -> Image.Image:
     blending, which can leave garbage-colored pixels showing through
     fully- or partially-transparent regions.
     """
-    if Path(path).suffix.lower() == ".svg":
-        image = _rasterize_svg(path)
-    else:
-        image = Image.open(path)
+    image = _rasterize_svg(path) if Path(path).suffix.lower() == ".svg" else Image.open(path)
     image = ImageOps.exif_transpose(image)
     if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
         image = image.convert("RGBA")
