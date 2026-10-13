@@ -89,6 +89,22 @@ def make_ambiguous_sheet() -> None:
     doc.close()
 
 
+def make_unnamed_multi_button_sheet() -> None:
+    """Two pushbuttons, neither matching the portrait-name heuristic.
+
+    Mirrors sheets where Acrobat auto-named every pushbutton (e.g.
+    "Image35_af_image") and none of them contain a recognized keyword, so
+    auto-detect must fall back to considering every pushbutton field.
+    """
+    doc = fitz.open()
+    page = doc.new_page(width=PAGE_SIZE[0], height=PAGE_SIZE[1])
+    _add_text_field(page, "Character Name", (20, 20, 300, 45))
+    _add_button_field(page, "Pic1", (20, 60, 180, 220))
+    _add_button_field(page, "Pic2", (200, 60, 360, 220))
+    doc.save(FIXTURES_DIR / "unnamed_multi_button_sheet.pdf")
+    doc.close()
+
+
 def make_multi_location_sheet() -> None:
     """One "Portrait" field with two `/Kids` widgets of different shapes.
 
@@ -181,6 +197,7 @@ def make_transparent_portrait_image() -> None:
 def main() -> None:
     make_simple_sheet()
     make_multi_field_sheet()
+    make_unnamed_multi_button_sheet()
     make_multi_location_sheet()
     make_no_image_sheet()
     make_ambiguous_sheet()

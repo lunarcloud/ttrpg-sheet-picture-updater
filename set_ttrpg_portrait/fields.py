@@ -151,7 +151,12 @@ def find_portrait_field(
     If ``field_name`` is given, an exact (case-sensitive) name match is
     required. Otherwise, all pushbutton fields are scored against the
     portrait-name heuristic; exactly one match is required to proceed
-    automatically.
+    automatically. If the heuristic finds no name matches but the sheet
+    has pushbutton fields at all (e.g. Acrobat-generated names like
+    "Image35_af_image" that don't contain a recognized keyword), fall
+    back to considering every pushbutton field instead: use it directly
+    if there's only one, or let the caller disambiguate if there's more
+    than one.
     """
     all_buttons = find_button_fields(pdf, page_index)
 
@@ -164,11 +169,14 @@ def find_portrait_field(
     matches = [c for c in all_buttons if is_portrait_field_name(c.name)]
 
     if not matches:
-        raise NoCandidateFieldError(
-            "No portrait/image field could be auto-detected on this sheet. "
-            "Use --list-fields to see all pushbutton fields, then rerun with "
-            "--field NAME."
-        )
+        if not all_buttons:
+            raise NoCandidateFieldError(
+                "No portrait/image field could be auto-detected on this sheet. "
+                "Use --list-fields to see all pushbutton fields, then rerun with "
+                "--field NAME."
+            )
+        matches = all_buttons
+
     if len(matches) > 1:
         match_names = tuple(c.name for c in matches)
         names = ", ".join(repr(name) for name in match_names)

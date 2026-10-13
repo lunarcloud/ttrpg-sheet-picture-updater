@@ -80,6 +80,21 @@ def test_find_portrait_field_no_candidate_raises() -> None:
         find_portrait_field(pdf)
 
 
+def test_find_portrait_field_falls_back_to_sole_pushbutton() -> None:
+    """A sheet's only pushbutton auto-detects even with a non-matching name."""
+    pdf = pikepdf.open(FIXTURES / "multi_field_sheet.pdf")
+    candidate = find_portrait_field(pdf)
+    assert candidate.name == "Pic1"
+
+
+def test_find_portrait_field_fallback_ambiguous_raises() -> None:
+    """Multiple non-matching pushbuttons still require disambiguation."""
+    pdf = pikepdf.open(FIXTURES / "unnamed_multi_button_sheet.pdf")
+    with pytest.raises(AmbiguousFieldError) as exc_info:
+        find_portrait_field(pdf)
+    assert set(exc_info.value.field_names) == {"Pic1", "Pic2"}
+
+
 def test_find_portrait_field_ambiguous_raises() -> None:
     pdf = pikepdf.open(FIXTURES / "ambiguous_sheet.pdf")
     with pytest.raises(AmbiguousFieldError):
