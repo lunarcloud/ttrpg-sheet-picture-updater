@@ -102,7 +102,7 @@ jobs:
         run: ./packaging/build-all.sh
 
       - name: Upload built packages as a workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: packages
           path: dist/packages/*
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     container: debian:stable
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
           path: dist/packages
@@ -136,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora:latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
           path: dist/packages
@@ -251,7 +251,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
           path: dist/packages
