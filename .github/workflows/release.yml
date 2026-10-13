@@ -1,16 +1,18 @@
 name: Release
 
-# Builds the .deb/.rpm/AppImage/.msix packages (packaging/build-all.sh +
-# build-msix.sh), verifies the .deb/.rpm actually install and run on real
-# Debian/Fedora systems (see "test-deb-install"/"test-rpm-install" below —
-# this is the whole point of packaging/nfpm.yaml's `depends` relying on
-# those distros' own python3-pyqt6/etc packages instead of bundling
-# everything, so it's worth catching a wrong/missing package name before
-# it reaches a release), then attaches all four artifacts to the GitHub
-# Release whenever one is published. The Linux artifacts build on
-# ubuntu-latest and the .msix builds on windows-latest, each matching
-# packaging/README.md's "build natively per architecture" note (pikepdf
-# ships platform-specific wheels) — x86_64 Linux + x64 Windows only.
+# Builds the .deb/.rpm/AppImage/.msix/macOS .dmg packages
+# (packaging/build-all.sh + build-msix.sh + build-macos.sh), verifies the
+# .deb/.rpm actually install and run on real Debian/Fedora systems (see
+# "test-deb-install"/"test-rpm-install" below — this is the whole point of
+# packaging/nfpm.yaml's `depends` relying on those distros' own
+# python3-pyqt6/etc packages instead of bundling everything, so it's worth
+# catching a wrong/missing package name before it reaches a release), then
+# attaches all five artifacts to the GitHub Release whenever one is
+# published. The Linux artifacts build on ubuntu-latest, the .msix builds
+# on windows-latest, and the .dmg builds on macos-latest (Apple Silicon by
+# default), each matching packaging/README.md's "build natively per
+# architecture" note (pikepdf ships platform-specific wheels) — x86_64
+# Linux + x64 Windows + arm64 macOS only (no Intel Mac build).
 #
 # Versioning: releases must be tagged "release/<version>" (e.g.
 # "release/1.2.3") or "v<version>" (e.g. "v1.2.3"). The very first step
@@ -198,8 +200,53 @@ jobs:
           path: dist/packages/*
           retention-days: 1
 
+  build-macos-dmg:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compute version from the release tag
+        run: |
+          packaging/lib/compute-version.sh "$GITHUB_REF_NAME" > .VERSION-PLACEHOLDER
+          version="$(cat .VERSION-PLACEHOLDER)"
+          echo "Resolved version: $version"
+          if [ "$version" = "0.0.0" ]; then
+            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't match 'release/<version>' or 'v<version>' — building as 0.0.0."
+          fi
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Create venv and install dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -e ".[dev]"
+
+      - name: Build .dmg
+        # No MACOS_SIGN_IDENTITY supplied — build-macos.sh ad-hoc signs by
+        # default (no paid Apple Developer certificate available). See
+        # packaging/README.md's macOS section for the resulting
+        # "users must right-click > Open the first time" caveat.
+        run: ./packaging/build-macos.sh
+
+      - name: Upload built .dmg as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-macos
+          path: dist/packages/*
+          retention-days: 1
+
   upload:
-    needs: [build, test-deb-install, test-rpm-install, build-windows-msix]
+    needs:
+      [
+        build,
+        test-deb-install,
+        test-rpm-install,
+        build-windows-msix,
+        build-macos-dmg,
+      ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -212,6 +259,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: packages-windows
+          path: dist/packages
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-macos
           path: dist/packages
 
       - name: Upload packages to the release
