@@ -65,7 +65,7 @@ contents:
 
 # The .deb/.rpm launchers above are plain Python scripts (NOT PyInstaller-
 # frozen — that's only the AppImage, which has no host package manager to
-# lean on) — they import PyQt6/pikepdf/Pillow/PyMuPDF from the distro's own
+# lean on) — they import PyQt6/pikepdf/Pillow/PyMuPDF/cairosvg from the distro's own
 # packages at runtime, so those need to be declared here. Doing it this way
 # means we don't need to hand-maintain the transitive closure of lower-level
 # system libraries (X11/XCB, EGL/GL, D-Bus, fontconfig, freetype, glib,
@@ -84,6 +84,7 @@ overrides:
       - python3-pikepdf # pikepdf
       - python3-pil # Pillow
       - python3-pymupdf # pymupdf (a.k.a. fitz), used for the GUI's sheet preview
+      - python3-cairosvg # cairosvg, used to rasterize SVG portraits
   rpm:
     depends:
       - python3 >= 3.10
@@ -91,4 +92,5 @@ overrides:
       - python3-pikepdf # pikepdf
       - python3-pillow # Pillow
       - python3-PyMuPDF # pymupdf (a.k.a. fitz), used for the GUI's sheet preview
+      - python3-cairosvg # cairosvg, used to rasterize SVG portraits
 

@@ -14,6 +14,11 @@ dependencies = [
     # module doesn't render AcroForm field appearances (values or icons)
     # at all, so PyMuPDF renders each page to an image instead.
     "pymupdf==1.28.0",
+    # Rasterizes SVG portraits (image_prep.py): PyMuPDF's own SVG support
+    # ignores embedded <style> CSS blocks and doesn't resolve `currentColor`
+    # (a common pattern in exported character-builder SVGs), silently
+    # rendering every such fill as black. cairosvg handles both correctly.
+    "cairosvg==2.9.1",
 ]
 
 [project.urls]

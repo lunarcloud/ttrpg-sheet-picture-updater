@@ -194,6 +194,23 @@ def make_transparent_portrait_image() -> None:
     image.save(FIXTURES_DIR / "portrait_transparent.webp", format="WEBP", lossless=True)
 
 
+def make_portrait_svg() -> None:
+    """A small, original, hand-authored SVG placeholder "portrait".
+
+    Exercises `image_prep.load_portrait()`'s SVG rasterization path.
+    Opaque shapes only (no transparency) so it can be compared loosely
+    against the raster fixtures without an alpha-flattening step in play.
+    """
+    svg = """<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
+  <rect width="300" height="400" fill="#c8dcf0"/>
+  <ellipse cx="150" cy="140" rx="75" ry="70" fill="#f0c8a0"/>
+  <rect x="60" y="240" width="180" height="160" fill="#5050c8"/>
+</svg>
+"""
+    (FIXTURES_DIR / "portrait.svg").write_text(svg, encoding="utf-8")
+
+
 def main() -> None:
     make_simple_sheet()
     make_multi_field_sheet()
@@ -202,6 +219,7 @@ def main() -> None:
     make_no_image_sheet()
     make_ambiguous_sheet()
     make_portrait_images()
+    make_portrait_svg()
     make_transparent_portrait_image()
     print(f"Fixtures written to {FIXTURES_DIR}")
 

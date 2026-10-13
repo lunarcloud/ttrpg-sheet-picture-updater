@@ -15,10 +15,10 @@ Download the appropriate package from a [release](../../releases) and
 install it:
 
 ```sh
-# Debian/Ubuntu (installs python3-pyqt6/python3-pikepdf/python3-pil/python3-pymupdf automatically)
+# Debian/Ubuntu (installs python3-pyqt6/python3-pikepdf/python3-pil/python3-pymupdf/python3-cairosvg automatically)
 sudo apt install ./set-ttrpg-portrait_<version>_amd64.deb
 
-# Fedora/RHEL (installs python3-pyqt6/python3-pikepdf/python3-pillow/python3-PyMuPDF automatically)
+# Fedora/RHEL (installs python3-pyqt6/python3-pikepdf/python3-pillow/python3-PyMuPDF/python3-cairosvg automatically)
 sudo dnf install ./set-ttrpg-portrait-<version>-1.x86_64.rpm
 
 # AppImage (any distro, no Python/system packages needed — fully self-contained)
@@ -26,7 +26,7 @@ chmod +x set-ttrpg-portrait-<version>-x86_64.AppImage
 ```
 
 The `.deb`/`.rpm` are plain Python, relying on your distro's own Python +
-PyQt6/pikepdf/Pillow/PyMuPDF packages (pulled in automatically by
+PyQt6/pikepdf/Pillow/PyMuPDF/cairosvg packages (pulled in automatically by
 `apt`/`dnf`) rather than bundling their own copies — see
 `packaging/README.md` for why. They install two separate commands — the
 CLI (`set-ttrpg-portrait`) and the GUI (`set-ttrpg-portrait-gui`, also

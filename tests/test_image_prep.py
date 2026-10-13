@@ -33,6 +33,15 @@ def test_load_portrait_normalizes_webp_to_rgb() -> None:
     assert image.mode == "RGB"
 
 
+def test_load_portrait_rasterizes_svg_to_rgb() -> None:
+    image = load_portrait(str(FIXTURES / "portrait.svg"))
+    assert image.mode == "RGB"
+    # viewBox is 300x400; rasterized at SVG_RASTER_DPI (not 72 dpi), so the
+    # pixel size should be scaled up accordingly, not a literal 300x400.
+    assert image.size[0] > 300
+    assert image.size[1] > 400
+
+
 def test_load_portrait_webp_matches_png() -> None:
     # Both fixtures are saved losslessly from the same source pixels, so
     # WebP should be handled identically to PNG (no format-specific

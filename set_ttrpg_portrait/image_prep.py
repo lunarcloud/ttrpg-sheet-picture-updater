@@ -8,7 +8,9 @@ isolation from any PDF handling.
 from __future__ import annotations
 
 import io
+from pathlib import Path
 
+import cairosvg
 from PIL import Image, ImageOps
 
 #: Default JPEG quality used when re-encoding the fitted portrait for
@@ -45,6 +47,19 @@ DEFAULT_ICON_DPI = 300
 #: size in points to a target pixel size at a given DPI).
 POINTS_PER_INCH = 72.0
 
+#: DPI used to rasterize SVG portraits (see `_rasterize_svg`) before the
+#: normal fit/encode pipeline runs. SVGs have no intrinsic pixel size, so
+#: this is just a generously high fixed resolution — `fit_image()` still
+#: downscales/crops to the field's actual target size afterward.
+SVG_RASTER_DPI = 300
+
+#: DPI an SVG's unitless (plain-number, e.g. ``width="300"``) dimensions
+#: are defined in, per the CSS/SVG spec. cairosvg's own ``dpi`` argument
+#: only rescales *physical*-unit dimensions (mm/cm/in/pt); unitless ones
+#: (the common case for exported character-builder SVGs) need `scale`
+#: instead, computed relative to this baseline.
+CSS_REFERENCE_DPI = 96.0
+
 FitMode = str  # "cover" or "contain"
 
 
@@ -54,13 +69,26 @@ def points_to_pixels(points: tuple[float, float], dpi: float = DEFAULT_ICON_DPI)
     return (points[0] * scale, points[1] * scale)
 
 
+def _rasterize_svg(path: str, dpi: float = SVG_RASTER_DPI) -> Image.Image:
+    """Rasterize an SVG file to a Pillow RGBA image at ``dpi``.
+
+    Pillow can't open SVGs (a vector format, not a bitmap). cairosvg is
+    used instead of PyMuPDF's own (also-available) SVG renderer because
+    the latter ignores embedded ``<style>`` CSS blocks and doesn't resolve
+    ``currentColor`` — both common in character-builder-exported SVGs —
+    silently rendering every such fill as black.
+    """
+    png_bytes = cairosvg.svg2png(url=path, scale=dpi / CSS_REFERENCE_DPI)
+    return Image.open(io.BytesIO(png_bytes))
+
+
 def load_portrait(path: str) -> Image.Image:
     """Open a portrait image file and normalize its orientation/color mode.
 
     Applies EXIF-based auto-rotation (many phone cameras store portrait
     photos rotated with an EXIF orientation tag rather than pre-rotated
     pixels) and converts to RGB so JPEG re-encoding always works, regardless
-    of the input format (JPEG, PNG, etc.).
+    of the input format (JPEG, PNG, SVG, etc.).
 
     Images with an alpha channel (e.g. transparent PNGs — the likely case
     for portraits cut out from a background) are **composited onto an
@@ -70,7 +98,10 @@ def load_portrait(path: str) -> Image.Image:
     blending, which can leave garbage-colored pixels showing through
     fully- or partially-transparent regions.
     """
-    image = Image.open(path)
+    if Path(path).suffix.lower() == ".svg":
+        image = _rasterize_svg(path)
+    else:
+        image = Image.open(path)
     image = ImageOps.exif_transpose(image)
     if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
         image = image.convert("RGBA")

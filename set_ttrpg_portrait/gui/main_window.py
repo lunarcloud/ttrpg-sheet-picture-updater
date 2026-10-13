@@ -62,14 +62,18 @@ _SHEET_EXTENSION = ".pdf"
 
 
 def _portrait_extensions() -> frozenset[str]:
-    """Every file extension Pillow's `Image.open()` can read, e.g. ``.png``.
+    """Every file extension `load_portrait()` can read, e.g. ``.png``.
 
     Queried from Pillow itself (rather than a hand-maintained list) so new
     codecs follow automatically from whatever Pillow build/plugins are
     installed, instead of silently being rejected by the GUI's file picker.
+    ``.svg`` is added on top since `image_prep.load_portrait()` rasterizes
+    it via `fitz` rather than Pillow, which has no SVG support.
     """
     Image.init()
-    return frozenset(ext for ext, fmt in Image.registered_extensions().items() if fmt in Image.OPEN)
+    extensions = {ext for ext, fmt in Image.registered_extensions().items() if fmt in Image.OPEN}
+    extensions.add(".svg")
+    return frozenset(extensions)
 
 
 #: Extensions accepted as a dropped/browsed portrait image (matches the
