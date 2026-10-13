@@ -71,6 +71,9 @@ cp -r "$REPO_ROOT/dist/$LAUNCHER_NAME/." "$STAGE_DIR/app/"
 MSIX_PUBLISHER="${MSIX_PUBLISHER:-CN=lunarcloud}"
 export MSIX_PUBLISHER
 
+# The public certificate is exported here, before nfpm packages the MSIX.
+mkdir -p "$OUT_DIR"
+
 MSIX_PFX_PASSPHRASE="${MSIX_PFX_PASSPHRASE:-}"
 if [ -z "${MSIX_PFX_FILE:-}" ]; then
     echo
@@ -100,7 +103,6 @@ export VERSION
 export MSIX_PFX_FILE
 export NFPM_MSIX_PASSPHRASE="$MSIX_PFX_PASSPHRASE"
 
-mkdir -p "$OUT_DIR"
 (cd "$REPO_ROOT" && "$NFPM" package \
     --config "$SCRIPT_DIR/nfpm.yaml" \
     --packager msix \
