@@ -28,6 +28,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+from PIL import Image
 from PyQt6.QtCore import QEvent, QObject, QThread
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox
@@ -59,9 +60,25 @@ _UI_FILENAME = "main_window.ui"
 #: Extension used to recognize a dropped fillable sheet.
 _SHEET_EXTENSION = ".pdf"
 
+
+def _portrait_extensions() -> frozenset[str]:
+    """Every file extension Pillow's `Image.open()` can read, e.g. ``.png``.
+
+    Queried from Pillow itself (rather than a hand-maintained list) so new
+    codecs follow automatically from whatever Pillow build/plugins are
+    installed, instead of silently being rejected by the GUI's file picker.
+    """
+    Image.init()
+    return frozenset(ext for ext, fmt in Image.registered_extensions().items() if fmt in Image.OPEN)
+
+
 #: Extensions accepted as a dropped/browsed portrait image (matches the
 #: `_browse_portrait()` file-picker filter below).
-_PORTRAIT_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tiff"}
+_PORTRAIT_EXTENSIONS = _portrait_extensions()
+
+#: Qt file-dialog filter string built from `_PORTRAIT_EXTENSIONS`, e.g.
+#: ``"Images (*.bmp *.gif *.jpg ...)"``.
+_PORTRAIT_FILE_FILTER = "Images (" + " ".join(f"*{ext}" for ext in sorted(_PORTRAIT_EXTENSIONS)) + ")"
 
 
 def _ui_file_path() -> Path:
@@ -213,7 +230,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self,
             "Select portrait image",
             "",
-            "Images (*.jpg *.jpeg *.png *.webp *.bmp *.gif *.tiff)",
+            _PORTRAIT_FILE_FILTER,
         )
         if path:
             self._set_portrait(path)
