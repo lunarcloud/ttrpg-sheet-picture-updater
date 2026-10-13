@@ -1,4 +1,5 @@
-"""Tests for the GUI window title's version reporting.
+"""Tests for the GUI window title's version reporting, and background-job
+thread lifecycle (QThread cleanup on close).
 
 Requires a Qt platform plugin to construct a QMainWindow; CI sets
 QT_QPA_PLATFORM=offscreen (see .github/workflows/test.yml) so these run
@@ -11,6 +12,7 @@ from __future__ import annotations
 import sys
 
 import pytest
+from PyQt6.QtCore import QThread
 from PyQt6.QtWidgets import QApplication
 
 from set_ttrpg_portrait.gui.main_window import MainWindow
@@ -49,5 +51,37 @@ def test_window_title_reflects_whatever_version_is_resolved(
     window = MainWindow()
     try:
         assert window.windowTitle() == "Set TTRPG Portrait 9.9.9-test"
+    finally:
+        window.close()
+
+
+def test_close_after_finished_job_does_not_crash(qapp: QApplication) -> None:
+    """Closing the window after a job's QThread has already finished must not raise.
+
+    Regression test: `QThread.finished` schedules `deleteLater()` on the
+    thread/worker, but previously left `self._thread`/`self._worker`
+    pointing at the (eventually deleted) Qt objects. `_shutdown_thread()`
+    (called from `closeEvent()`) would then touch an already-destroyed
+    C++ QThread and raise "RuntimeError: wrapped C/C++ object ... has
+    been deleted" if that deletion had already happened by the time the
+    window closed.
+    """
+    window = MainWindow()
+    try:
+        thread = QThread(window)
+        thread.finished.connect(thread.deleteLater)
+        window._thread = thread
+        window._worker = object()
+        window._clear_thread_refs()
+
+        # Force the scheduled deleteLater() to actually run now, so the
+        # underlying C++ QThread is gone before close() is called below —
+        # reproducing the original race without needing a real worker job.
+        thread.deleteLater()
+        qapp.sendPostedEvents(None, 0)
+        qapp.processEvents()
+
+        assert window._thread is None
+        window.close()  # must not raise
     finally:
         window.close()

@@ -312,7 +312,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # lifetime of the window.
         self._thread.finished.connect(self._thread.deleteLater)
         self._thread.finished.connect(self._worker.deleteLater)
+        # Drop our own references too, once scheduled for deletion above —
+        # otherwise `self._thread`/`self._worker` keep pointing at a C++
+        # object Qt will eventually destroy, and a later call (e.g.
+        # `_shutdown_thread()` from `closeEvent()`) touching it raises
+        # "RuntimeError: wrapped C/C++ object ... has been deleted".
+        self._thread.finished.connect(self._clear_thread_refs)
         self._thread.start()
+
+    def _clear_thread_refs(self) -> None:
+        """Drop references to a just-finished thread/worker.
+
+        Connected to `QThread.finished`, right after the `deleteLater()`
+        calls that schedule the actual Qt-side destruction.
+        """
+        self._thread = None
+        self._worker = None
 
     def _set_inputs_enabled(self, enabled: bool) -> None:
         """Disable Browse/Clear while a process is running to avoid races."""
