@@ -58,11 +58,11 @@ if [ ! -x "$PYTHON" ]; then
     exit 1
 fi
 
-echo "Building the combined CLI+GUI launcher .exe with PyInstaller..."
-(cd "$REPO_ROOT" && "$PYTHON" -m PyInstaller "$SCRIPT_DIR/set-ttrpg-portrait-msix.spec" --noconfirm)
-
 echo "Generating packaging icons (including MSIX logos/.ico) from the master source icon..."
 "$PYTHON" "$SCRIPT_DIR/icon/generate_icons.py"
+
+echo "Building the combined CLI+GUI launcher .exe with PyInstaller..."
+(cd "$REPO_ROOT" && "$PYTHON" -m PyInstaller "$SCRIPT_DIR/set-ttrpg-portrait-msix.spec" --noconfirm)
 
 rm -rf "$STAGE_DIR"
 mkdir -p "$STAGE_DIR/app"
