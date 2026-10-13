@@ -36,6 +36,7 @@ from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox
 from set_ttrpg_portrait import __version__
 from set_ttrpg_portrait.gui import preview
 from set_ttrpg_portrait.gui.worker import ApplyWorker
+from set_ttrpg_portrait.image_prep import svg_support_available
 
 try:
     # Only present when precompiled by packaging/lib/stage-files.sh (see
@@ -68,11 +69,15 @@ def _portrait_extensions() -> frozenset[str]:
     codecs follow automatically from whatever Pillow build/plugins are
     installed, instead of silently being rejected by the GUI's file picker.
     ``.svg`` is added on top since `image_prep.load_portrait()` rasterizes
-    it via `fitz` rather than Pillow, which has no SVG support.
+    it via cairosvg rather than Pillow, which has no SVG support — but only
+    if cairosvg's native Cairo library is actually available on this
+    machine (see `svg_support_available()`), so a Cairo-less install never
+    offers SVG as a choice it can't honor.
     """
     Image.init()
     extensions = {ext for ext, fmt in Image.registered_extensions().items() if fmt in Image.OPEN}
-    extensions.add(".svg")
+    if svg_support_available():
+        extensions.add(".svg")
     return frozenset(extensions)
 
 
@@ -210,6 +215,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return True
         if accepts_portrait and suffix in _PORTRAIT_EXTENSIONS:
             self._set_portrait(path)
+            return True
+        if accepts_portrait and suffix == ".svg" and not svg_support_available():
+            # Explain *why* it's rejected rather than silently ignoring the
+            # drop like any other unsupported type (see
+            # `svg_support_available()`) — SVG is usually a real format
+            # choice the user expects to work.
+            QMessageBox.critical(
+                self,
+                "SVG not supported",
+                "SVG portraits require Cairo's native library, which isn't "
+                "installed on this machine. Install Cairo (e.g. via "
+                "Homebrew on macOS, or your Linux distro's libcairo2/cairo "
+                "package) or use a PNG/JPEG portrait instead.",
+            )
             return True
         return False
 

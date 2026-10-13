@@ -8,10 +8,12 @@ isolation from any PDF handling.
 from __future__ import annotations
 
 import io
+from functools import lru_cache
 from pathlib import Path
 
-import cairosvg
 from PIL import Image, ImageOps
+
+from set_ttrpg_portrait.errors import SvgSupportUnavailableError
 
 #: Default JPEG quality used when re-encoding the fitted portrait for
 #: embedding into the sheet. Adobe Acrobat's own "Select Icon" feature
@@ -69,6 +71,23 @@ def points_to_pixels(points: tuple[float, float], dpi: float = DEFAULT_ICON_DPI)
     return (points[0] * scale, points[1] * scale)
 
 
+@lru_cache(maxsize=1)
+def svg_support_available() -> bool:
+    """Whether SVG portraits can be rasterized on this machine.
+
+    Attempts the same import `_rasterize_svg()` needs, cached so the
+    (slow-ish, native-library-probing) check only happens once per process.
+    Callers that want to preemptively hide/reject SVG input (e.g. the GUI's
+    file picker/drag-and-drop) can check this instead of waiting for
+    `_rasterize_svg()` to raise.
+    """
+    try:
+        import cairosvg  # noqa: F401
+    except OSError:
+        return False
+    return True
+
+
 def _rasterize_svg(path: str, dpi: float = SVG_RASTER_DPI) -> Image.Image:
     """Rasterize an SVG file to a Pillow RGBA image at ``dpi``.
 
@@ -77,7 +96,23 @@ def _rasterize_svg(path: str, dpi: float = SVG_RASTER_DPI) -> Image.Image:
     the latter ignores embedded ``<style>`` CSS blocks and doesn't resolve
     ``currentColor`` — both common in character-builder-exported SVGs —
     silently rendering every such fill as black.
+
+    cairosvg is imported here, not at module scope, because it loads its
+    native Cairo library via ``ctypes`` as soon as it's imported. The
+    frozen AppImage/MSIX/.dmg builds don't bundle or declare that native
+    library, so importing it eagerly would crash the whole app on startup
+    on a machine without Cairo installed, instead of only failing to load
+    this one SVG.
     """
+    if not svg_support_available():
+        raise SvgSupportUnavailableError(
+            "SVG support requires Cairo's native library, which isn't "
+            "installed/loadable on this machine. Install Cairo (e.g. via "
+            "Homebrew on macOS, or your Linux distro's libcairo2/cairo "
+            "package) or convert the portrait to PNG/JPEG instead."
+        )
+    import cairosvg
+
     png_bytes = cairosvg.svg2png(url=path, scale=dpi / CSS_REFERENCE_DPI)
     return Image.open(io.BytesIO(png_bytes))
 

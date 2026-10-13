@@ -109,13 +109,17 @@ Four different strategies, chosen per-format:
     step).
   - **Caveat**: `cairosvg` (used to rasterize SVG portraits, see
     `set_ttrpg_portrait/image_prep.py`) depends on `libcairo` being
-    loadable at runtime via `ctypes.util.find_library` — unlike the
-    `.deb`/`.rpm`, this frozen `.app` doesn't declare or bundle that
-    system dependency, so SVG portraits may fail to load on a Mac without
-    Cairo installed (e.g. via Homebrew's `cairo` package, commonly present
-    already through GTK/Pango-using apps). Not yet addressed — would need
-    either bundling `libcairo.dylib` into the `.app` or documenting the
-    Homebrew prerequisite.
+    loadable at runtime via `ctypes.util.find_library`. Unlike the
+    `.deb`/`.rpm` (which declare it as a system package dependency), none
+    of the frozen builds (AppImage/MSIX/`.dmg`) bundle or declare it. Since
+    cairocffi loads it with `ctypes` at *import* time rather than lazily,
+    `image_prep.py` imports `cairosvg` only inside `_rasterize_svg()`
+    (not at module scope) so a missing Cairo install only breaks loading
+    that one SVG (raising `SvgSupportUnavailableError` with a clear
+    message) instead of crashing the whole app on startup. A Mac without
+    Cairo installed (e.g. via Homebrew's `cairo` package) simply can't load
+    SVG portraits until it's installed; every other image format is
+    unaffected.
 
 ## Build-time tools (not needed by end users)
 
