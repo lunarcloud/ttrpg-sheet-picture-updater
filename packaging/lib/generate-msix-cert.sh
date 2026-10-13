@@ -35,7 +35,8 @@ generate_self_signed_msix_cert() {
             -CertStoreLocation 'Cert:\\CurrentUser\\My' \`
             -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}Subject Type:End Entity')
         \$pwd = ConvertTo-SecureString -String '$passphrase' -Force -AsPlainText
-        Export-PfxCertificate -Cert \$cert -FilePath '$win_out_pfx' -Password \$pwd | Out-Null
+        \$exportParams = @{ Cert = \$cert; FilePath = '$win_out_pfx'; Password = \$pwd }
+        Export-PfxCertificate @exportParams | Out-Null
         Remove-Item \"Cert:\\CurrentUser\\My\\\$(\$cert.Thumbprint)\"
     "
 }
@@ -56,8 +57,8 @@ export_msix_public_cert() {
 
     powershell.exe -NoProfile -Command "
         \$ErrorActionPreference = 'Stop'
-        \$pwd = ConvertTo-SecureString -String '$passphrase' -Force -AsPlainText
-        \$cert = Get-PfxCertificate -FilePath '$win_pfx_path' -Password \$pwd
+        \$cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new('$win_pfx_path', '$passphrase')
         [System.IO.File]::WriteAllBytes('$win_out_cer', \$cert.Export('Cert'))
+        \$cert.Dispose()
     "
 }
