@@ -12,6 +12,10 @@ set -euo pipefail
 
 NFPM_VERSION="2.47.0"
 NFPM_URL="https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz"
+# build-msix.sh runs under Git Bash on a windows-latest CI runner (see
+# packaging/README.md's MSIX section) — nfpm publishes a separate Windows
+# release asset (a .zip, not the Linux/macOS .tar.gz) containing nfpm.exe.
+NFPM_WINDOWS_URL="https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Windows_x86_64.zip"
 APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
 # linuxdeploy bundles the AppImage's shared-library dependencies (see
 # build-appimage.sh) — also pinned to its "continuous" release, like
@@ -21,7 +25,32 @@ LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/co
 _fetch_tools_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGING_TOOLS_DIR="$(dirname "$_fetch_tools_script_dir")/tools"
 
+# Git Bash on Windows reports a MINGW*/MSYS*/CYGWIN* `uname -s`, never
+# "Linux"/"Darwin" — used to pick the right nfpm release asset/binary name.
+_is_windows() {
+    case "$(uname -s)" in
+        MINGW* | MSYS* | CYGWIN*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 fetch_nfpm() {
+    if _is_windows; then
+        if [ -x "$PACKAGING_TOOLS_DIR/nfpm.exe" ]; then
+            echo "nfpm already present at $PACKAGING_TOOLS_DIR/nfpm.exe"
+            return 0
+        fi
+        echo "Downloading nfpm v$NFPM_VERSION to $PACKAGING_TOOLS_DIR/nfpm.exe ..."
+        mkdir -p "$PACKAGING_TOOLS_DIR"
+        curl -fsSL -o "$PACKAGING_TOOLS_DIR/nfpm.zip" "$NFPM_WINDOWS_URL"
+        # Use PowerShell's Expand-Archive rather than `unzip` — guaranteed
+        # present on windows-latest runners, unlike `unzip` in Git Bash.
+        powershell.exe -NoProfile -Command \
+            "Expand-Archive -Path '$(cygpath -w "$PACKAGING_TOOLS_DIR/nfpm.zip")' -DestinationPath '$(cygpath -w "$PACKAGING_TOOLS_DIR")' -Force"
+        rm -f "$PACKAGING_TOOLS_DIR/nfpm.zip"
+        return 0
+    fi
+
     if [ -x "$PACKAGING_TOOLS_DIR/nfpm" ]; then
         echo "nfpm already present at $PACKAGING_TOOLS_DIR/nfpm"
         return 0
@@ -60,6 +89,14 @@ fetch_linuxdeploy() {
 # packaging/tools/ copy if one exists, else to a PATH-installed copy, else
 # empty (caller should error).
 resolve_nfpm() {
+    if _is_windows; then
+        if [ -x "$PACKAGING_TOOLS_DIR/nfpm.exe" ]; then
+            echo "$PACKAGING_TOOLS_DIR/nfpm.exe"
+        else
+            command -v nfpm.exe || command -v nfpm || true
+        fi
+        return 0
+    fi
     if [ -x "$PACKAGING_TOOLS_DIR/nfpm" ]; then
         echo "$PACKAGING_TOOLS_DIR/nfpm"
     else
