@@ -46,9 +46,11 @@ Four different strategies, chosen per-format:
     release.yml`'s `windows-latest` runner) — `pikepdf`'s platform-specific
     compiled wheel means the frozen `.exe` can't be cross-built from
     Linux/macOS, same constraint as the AppImage. `makensis` itself is
-    already preinstalled on `windows-latest` runners; for local builds,
-    see `fetch_makensis` in `packaging/lib/fetch-tools.sh`, or install NSIS
-    yourself from <https://nsis.sourceforge.io/>.
+    NOT preinstalled on `windows-latest` runners, but Chocolatey is —
+    `release.yml`'s `build-windows-installer` job installs it via
+    `choco install nsis`. For local builds, see `fetch_makensis` in
+    `packaging/lib/fetch-tools.sh`, or install NSIS yourself from
+    <https://nsis.sourceforge.io/>.
   - Installs per-user (to `%LOCALAPPDATA%\Programs\set-ttrpg-portrait`,
     registry entries under `HKCU`) — no admin/UAC elevation required.
   - **No signing**: this project previously shipped a `.msix`, but MSIX
@@ -129,10 +131,12 @@ Four different strategies, chosen per-format:
 - **`linuxdeploy`** — also required by `build-appimage.sh`. Statically
   discovers and bundles the AppImage's missing system-library
   dependencies (see above).
-- **`makensis` (NSIS)** — required by `build-nsis.sh`. Already preinstalled
-  on `windows-latest` CI runners, so no fetch step is needed there; for
-  local Windows dev builds it's fetched the same way as the other tools
-  below (NSIS's "portable" zip, no install step needed).
+- **`makensis` (NSIS)** — required by `build-nsis.sh`. NOT preinstalled on
+  `windows-latest` CI runners; `release.yml`'s `build-windows-installer`
+  job installs it via Chocolatey (`choco install nsis`, also preinstalled
+  on those runners). For local Windows dev builds without choco, it's
+  fetched the same way as the other tools below (NSIS's "portable" zip,
+  no install step needed).
 
 All four tools are fetched on demand to `packaging/tools/` (gitignored,
 never committed, never installed system-wide) — run `./setup.sh` from the

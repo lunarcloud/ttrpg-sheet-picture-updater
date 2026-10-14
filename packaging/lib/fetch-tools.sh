@@ -20,9 +20,10 @@ APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/download/con
 LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
 # NSIS's "portable" zip (as opposed to its installer .exe) just needs
 # extracting — no install step, same as the other tools here. Used by
-# build-nsis.sh. windows-latest CI runners already have NSIS preinstalled
-# (see packaging/README.md's Windows section), so this is only needed for
-# local Windows dev builds.
+# build-nsis.sh. release.yml's build-windows-installer CI job installs
+# NSIS via Chocolatey instead (see packaging/README.md's Windows
+# section), so this is only needed for local Windows dev builds without
+# choco.
 NSIS_VERSION="3.11"
 NSIS_URL="https://sourceforge.net/projects/nsis/files/NSIS%203/${NSIS_VERSION}/nsis-${NSIS_VERSION}.zip/download"
 
@@ -134,8 +135,9 @@ resolve_makensis() {
         command -v makensis
         return 0
     fi
-    # windows-latest GitHub Actions runners have NSIS preinstalled here,
-    # but it isn't necessarily on PATH.
+    # Chocolatey's `nsis` package (installed by release.yml's
+    # build-windows-installer job) installs to this default location,
+    # which isn't necessarily already on PATH.
     local default_path="/c/Program Files (x86)/NSIS/makensis.exe"
     if [ -x "$default_path" ]; then
         echo "$default_path"
