@@ -36,7 +36,7 @@ def _attach_windows_console() -> None:
     """
     import ctypes
 
-    kernel32 = ctypes.windll.kernel32
+    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]  # Windows-only ctypes attribute
     if kernel32.GetConsoleWindow():
         return  # already attached (e.g. a plain `python` run) -- no-op.
     ATTACH_PARENT_PROCESS = -1

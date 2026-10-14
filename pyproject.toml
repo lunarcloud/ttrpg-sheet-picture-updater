@@ -41,8 +41,10 @@ set-ttrpg-portrait-gui = "set_ttrpg_portrait.gui:main"
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-cov==7.1.0",
     "pyinstaller",
     "ruff==0.17.0",
+    "mypy==2.4.0",
 ]
 
 [build-system]
@@ -86,3 +88,32 @@ select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
 # Matches the line-length/quote-style Black previously enforced, so this
 # change doesn't churn the whole codebase's formatting.
 quote-style = "double"
+
+[tool.mypy]
+# Scoped to the actual library (set_ttrpg_portrait/) only, not tests/ or
+# packaging/ — see ./typecheck.sh's header comment for why: PyInstaller
+# .spec files rely on globals (Analysis, EXE, ...) injected at exec time
+# that don't exist as real imports, and third-party test-only stubs
+# (PyMuPDF's C constants, etc.) are noisy without much payoff.
+python_version = "3.10"
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+# PyQt6/pikepdf/pymupdf/cairosvg don't ship (or don't fully ship) type
+# stubs — don't fail the build over third-party gaps we can't fix.
+module = ["PyQt6.*", "pikepdf.*", "pymupdf.*", "cairosvg.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Only exists when precompiled by packaging/lib/stage-files.sh (see
+# set_ttrpg_portrait/gui/main_window.py's module docstring) — never
+# present in a source checkout, so mypy can't resolve it statically.
+module = ["set_ttrpg_portrait.gui.main_window_ui"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=set_ttrpg_portrait --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true

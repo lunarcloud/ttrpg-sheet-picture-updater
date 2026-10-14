@@ -1,8 +1,12 @@
 name: Test
 
-# Runs the formatter/linter checks + pytest suite against our own IP-free
-# synthetic fixtures only (tests/fixtures/). Never depends on any real,
-# copyrighted third-party sheets — see .github/copilot-instructions.md.
+# Runs the formatter/linter/type-checker checks + pytest suite (with
+# coverage) + packaging-script validation against our own IP-free synthetic
+# fixtures only (tests/fixtures/). Never depends on any real, copyrighted
+# third-party sheets — see .github/copilot-instructions.md. Every check
+# here is runnable locally too via its own script (./format.sh,
+# ./lint.sh, ./typecheck.sh, ./packaging/validate.sh, ./test.sh) — see
+# README.md's "For devs" section.
 on:
   push:
     branches: [main]
@@ -46,7 +50,8 @@ jobs:
             libxcb-sync1 \
             libxcb-xfixes0 \
             libxcb-xinerama0 \
-            libxcb-xkb1
+            libxcb-xkb1 \
+            nsis
 
       - name: Create venv and install dependencies
         run: |
@@ -63,8 +68,11 @@ jobs:
       - name: Lint shell scripts (shellcheck)
         run: shellcheck --severity=warning $(find . -name "*.sh" -not -path "./.venv/*" -not -path "./build/*" -not -path "./dist/*")
 
-      - name: Regenerate test fixtures
-        run: .venv/bin/python tests/fixtures/generate_fixtures.py
+      - name: Type-check (mypy)
+        run: ./typecheck.sh
 
-      - name: Run pytest
-        run: .venv/bin/python -m pytest tests/ -v
+      - name: Validate packaging scripts (.spec/.nsi syntax)
+        run: ./packaging/validate.sh
+
+      - name: Run pytest (with coverage)
+        run: ./test.sh

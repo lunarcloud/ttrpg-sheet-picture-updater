@@ -165,9 +165,9 @@ def fit_image(
         raise ValueError(f"Invalid target size: {target_size!r}")
 
     if mode == "cover":
-        fitted = ImageOps.fit(image, (target_w, target_h), method=Image.LANCZOS)
+        fitted = ImageOps.fit(image, (target_w, target_h), method=Image.Resampling.LANCZOS)
     else:
-        contained = ImageOps.contain(image, (target_w, target_h), method=Image.LANCZOS)
+        contained = ImageOps.contain(image, (target_w, target_h), method=Image.Resampling.LANCZOS)
         fitted = Image.new("RGB", (target_w, target_h), color=WHITE_BACKGROUND)
         offset = (
             (target_w - contained.width) // 2,

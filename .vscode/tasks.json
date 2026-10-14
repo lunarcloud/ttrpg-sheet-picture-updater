@@ -30,6 +30,20 @@
       "group": "build"
     },
     {
+      "label": "Type-check (mypy)",
+      "type": "shell",
+      "command": "${workspaceFolder}/typecheck.sh",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Validate packaging scripts (.spec/.nsi)",
+      "type": "shell",
+      "command": "${workspaceFolder}/packaging/validate.sh",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
       "label": "Check for outdated dependencies",
       "type": "shell",
       "command": "${workspaceFolder}/package-updates.sh",
@@ -38,8 +52,7 @@
     {
       "label": "Test: pytest",
       "type": "shell",
-      "command": "${workspaceFolder}/.venv/bin/python",
-      "args": ["-m", "pytest", "tests/", "-v"],
+      "command": "${workspaceFolder}/test.sh",
       "problemMatcher": [],
       "group": { "kind": "test", "isDefault": true },
       "presentation": { "reveal": "always", "panel": "shared" }
@@ -54,21 +67,7 @@
     {
       "label": "Lint shell scripts (shellcheck)",
       "type": "shell",
-      "command": "shellcheck",
-      "args": [
-        "--severity=warning",
-        "${workspaceFolder}/setup.sh",
-        "${workspaceFolder}/run.sh",
-        "${workspaceFolder}/format.sh",
-        "${workspaceFolder}/lint.sh",
-        "${workspaceFolder}/package-updates.sh",
-        "${workspaceFolder}/packaging/build-all.sh",
-        "${workspaceFolder}/packaging/build-deb.sh",
-        "${workspaceFolder}/packaging/build-rpm.sh",
-        "${workspaceFolder}/packaging/build-appimage.sh",
-        "${workspaceFolder}/packaging/lib/fetch-tools.sh",
-        "${workspaceFolder}/packaging/lib/stage-files.sh"
-      ],
+      "command": "shellcheck --severity=warning $(find ${workspaceFolder} -name '*.sh' -not -path '*/.venv/*' -not -path '*/build/*' -not -path '*/dist/*')",
       "problemMatcher": []
     },
     {

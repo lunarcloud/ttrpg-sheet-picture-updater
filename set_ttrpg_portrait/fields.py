@@ -112,7 +112,8 @@ def _field_locations(field: pikepdf.Object, page_lookup: dict[tuple[int, int], i
         page_index = page_lookup.get(annot.objgen)
         if page_index is None:
             continue
-        rect = tuple(float(v) for v in annot.Rect)
+        x0, y0, x1, y1 = (float(v) for v in annot.Rect)
+        rect = (x0, y0, x1, y1)
         locations.append(FieldLocation(page_index=page_index, rect=rect))
     return tuple(locations)
 

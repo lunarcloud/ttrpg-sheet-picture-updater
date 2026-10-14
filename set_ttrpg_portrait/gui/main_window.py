@@ -30,7 +30,7 @@ from pathlib import Path
 
 from PIL import Image
 from PyQt6.QtCore import QEvent, QObject, QStandardPaths, QThread
-from PyQt6.QtGui import QAction, QKeySequence, QPixmap
+from PyQt6.QtGui import QAction, QDropEvent, QKeySequence, QPixmap
 from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox
 
 from set_ttrpg_portrait import __version__
@@ -40,8 +40,10 @@ from set_ttrpg_portrait.image_prep import svg_support_available
 
 try:
     # Only present when precompiled by packaging/lib/stage-files.sh (see
-    # module docstring) — not committed, not present in a source checkout.
-    from set_ttrpg_portrait.gui.main_window_ui import Ui_MainWindow
+    # module docstring) — not committed, not present in a source checkout,
+    # so Pylance always flags this as unresolved; mypy has an equivalent
+    # per-module ignore_missing_imports override (see pyproject.toml).
+    from set_ttrpg_portrait.gui.main_window_ui import Ui_MainWindow  # pyright: ignore[reportMissingImports]
 
     _HAS_PRECOMPILED_UI = True
 except ImportError:
@@ -194,7 +196,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             f"Set TTRPG Portrait {__version__}\n\nEmbed a portrait in a fillable character sheet PDF.",
         )
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802
+    # PyQt6's stubs name these params a0/a1 (no positional-only marker), so
+    # Pylance's reportIncompatibleMethodOverride flags this descriptively-
+    # renamed override below; mypy (the CI-authoritative checker) doesn't
+    # enforce name matching and passes this cleanly, so it's suppressed here.
+    def eventFilter(  # noqa: N802  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, obj: QObject | None, event: QEvent | None
+    ) -> bool:
         """Handle drag-and-drop of files onto the path fields and preview.
 
         Installed on `self._drop_targets` in `__init__()` rather than
@@ -202,17 +210,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         class, since those are plain stock Qt widgets (`QLineEdit`,
         `QScrollArea`, `QLabel`) loaded from the `.ui` form.
         """
-        if obj in self._drop_targets:
-            if event.type() in (QEvent.Type.DragEnter, QEvent.Type.DragMove):
-                if event.mimeData().hasUrls():
-                    event.acceptProposedAction()
-                    return True
-            elif event.type() == QEvent.Type.Drop and self._handle_drop(obj, event):
+        if event is not None and obj in self._drop_targets and isinstance(event, QDropEvent):
+            is_drag = event.type() in (QEvent.Type.DragEnter, QEvent.Type.DragMove) and (
+                (mime := event.mimeData()) is not None and mime.hasUrls()
+            )
+            is_drop = event.type() == QEvent.Type.Drop and self._handle_drop(obj, event)
+            if is_drag or is_drop:
                 event.acceptProposedAction()
                 return True
         return super().eventFilter(obj, event)
 
-    def _handle_drop(self, target: QObject, event: QEvent) -> bool:
+    def _handle_drop(self, target: QObject | None, event: QDropEvent) -> bool:
         """Route a dropped file to the sheet or portrait input.
 
         The two path fields only accept their own file type; the preview
@@ -220,7 +228,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         always becomes the sheet and a dropped image always becomes the
         portrait, regardless of which one is currently loaded.
         """
-        urls = event.mimeData().urls()
+        mime = event.mimeData()
+        urls = mime.urls() if mime is not None else []
         if not urls or not urls[0].isLocalFile():
             return False
         path = urls[0].toLocalFile()

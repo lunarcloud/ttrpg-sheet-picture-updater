@@ -126,10 +126,11 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
 
 1. `./setup.sh` — creates `.venv` and installs this project editable with
    its `dev` extra (`pip install -e ".[dev]"`, from `pyproject.toml`). It
-   will also optionally offer to fetch `nfpm`/`appimagetool`/`linuxdeploy`
-   (standalone binaries, cached in `packaging/tools/`, never installed
-   system-wide) if you plan to build `.deb`/`.rpm`/AppImage packages — only
-   needed for release builds, not everyday development.
+   will also optionally offer to fetch `nfpm`/`appimagetool`/`linuxdeploy`/
+   `makensis` (standalone binaries, cached in `packaging/tools/`, never
+   installed system-wide) if you plan to build `.deb`/`.rpm`/AppImage/
+   Windows-installer packages — only needed for release builds, not
+   everyday development.
    
 2. `./format.sh` — formats Python with `ruff format` (line length 120). Use
    `./format.sh --check` (what CI runs) to verify formatting without
@@ -138,7 +139,15 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
 3. `./lint.sh` — lints Python with `ruff check`. Use `./lint.sh --fix` to
    auto-apply safe fixes.
 
-4. `./package-updates.sh` — checks pinned dependency versions for updates:
+4. `./typecheck.sh` — type-checks `set_ttrpg_portrait/` with `mypy`.
+
+5. `./packaging/validate.sh` — validates the PyInstaller `.spec` files and
+   `packaging/windows/installer.nsi` (syntax-only; doesn't need a native
+   Windows host, just `makensis` — see `./setup.sh` above) without doing a
+   full platform-specific build. Skips the `installer.nsi` check with a
+   warning if `makensis` isn't installed locally; CI always has it.
+
+6. `./package-updates.sh` — checks pinned dependency versions for updates:
    the pip packages in `pyproject.toml` (also covered automatically, on a
    monthly cadence, by Dependabot — see `.github/dependabot.yml`) plus the
    `nfpm`/`appimagetool`/`linuxdeploy` build tools in
@@ -146,19 +155,22 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
    plain bash variables, not a manifest file. Add `--update` to rewrite
    outdated pins in place.
 
-5. Run the test suite: `.venv/bin/python -m pytest tests/`.
+7. `./test.sh` — regenerates synthetic test fixtures (see point 8) and runs
+   the pytest suite with coverage reporting. Extra args pass through to
+   pytest, e.g. `./test.sh -k fields`.
 
-6. Regenerate synthetic test fixtures after changing `tests/fixtures/`
+8. Regenerate synthetic test fixtures after changing `tests/fixtures/`
    generation logic: `.venv/bin/python tests/fixtures/generate_fixtures.py`.
    
-7. All automated tests use the synthetic, IP-free fixtures under
+9. All automated tests use the synthetic, IP-free fixtures under
    `tests/fixtures/` — never commit or reference any real, copyrighted
    third-party character sheet PDFs anywhere in this repo or CI.
 
    
 ### VS Code
 
-We're set up with tasks (Setup, Format, Test, Regenerate fixtures, Build packages), 
+We're set up with tasks (Setup, Format, Lint, Type-check, Validate packaging
+scripts, Test, Regenerate fixtures, Build packages), 
 launch configs (Run CLI/GUI, debug tests), 
 and settings pointing at `.venv` — open the Run/Debug and Tasks panels to use them; 
 installing the recommended extensions (prompted automatically) enables format-on-save and the Testing panel.
