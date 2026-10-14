@@ -68,13 +68,16 @@ Four different strategies, chosen per-format:
   **Apple Silicon (arm64) only — no Intel build is produced.** Like the
   AppImage/Windows installer, it's a PyInstaller-frozen one-dir build of the same
   combined CLI+GUI launcher, wrapped in a PyInstaller `BUNDLE()` to produce
-  a standard `set-ttrpg-portrait.app`, then packaged into a `.dmg` with
-  `hdiutil` (built into every macOS host — no extra packaging tool needed,
-  unlike nfpm for the other formats; macOS has no equivalent to nfpm). The
-  `.dmg` contains the `.app` plus a symlink to `/Applications`, the
-  standard "drag the icon over" installation pattern for Mac GUI apps.
-  Advanced users wanting CLI access can invoke
-  `/Applications/set-ttrpg-portrait.app/Contents/MacOS/set-ttrpg-portrait-launcher`
+  a standard `Set TTRPG Portrait.app` — named for the friendly name
+  (rather than the kebab-case internal name), since Launchpad, the Dock,
+  and the Command-Tab switcher all use the bundle's on-disk filename —
+  then packaged into a `.dmg` with `hdiutil` (built into every macOS host
+  — no extra packaging tool needed, unlike nfpm for the other formats;
+  macOS has no equivalent to nfpm). The `.dmg` contains the `.app` plus a
+  symlink to `/Applications`, the standard "drag the icon over"
+  installation pattern for Mac GUI apps. Advanced users wanting CLI access
+  can invoke
+  `/Applications/Set TTRPG Portrait.app/Contents/MacOS/set-ttrpg-portrait-launcher`
   directly, or symlink it onto their own `PATH`.
   The bundle explicitly disables `LSBackgroundOnly` and `LSUIElement` so
   it appears in the Dock and Command-Tab switcher even though it keeps a
@@ -105,7 +108,7 @@ Four different strategies, chosen per-format:
     users must right-click (or Control-click) the app in Finder and choose
     "Open"** (accepting the one-time warning dialog) instead of
     double-clicking it the first time — or remove the quarantine attribute
-    themselves via `xattr -cr /Applications/set-ttrpg-portrait.app`. If a
+    themselves via `xattr -cr "/Applications/Set TTRPG Portrait.app"`. If a
     real Developer ID certificate becomes available later, set
     `MACOS_SIGN_IDENTITY` to its name instead of the ad-hoc default (`-`)
     to sign properly (notarization would still be a separate, unimplemented

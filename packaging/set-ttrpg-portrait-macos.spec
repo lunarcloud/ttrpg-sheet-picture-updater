@@ -14,8 +14,9 @@
 #   .venv/bin/pyinstaller packaging/set-ttrpg-portrait-macos.spec
 #
 # Produces dist/set-ttrpg-portrait-launcher/ (one-dir, same as the
-# AppImage/Windows installer specs) AND dist/set-ttrpg-portrait.app (the
-# BUNDLE() wrapping it) — build-macos.sh packages the latter into the
+# AppImage/Windows installer specs) AND "dist/Set TTRPG Portrait.app"
+# (the BUNDLE() wrapping it, named for the friendly name Launchpad/the
+# Dock/task switcher show) — build-macos.sh packages the latter into the
 # final .dmg.
 
 import pathlib
@@ -81,7 +82,10 @@ coll = COLLECT(
 
 app = BUNDLE(
     coll,
-    name="set-ttrpg-portrait.app",
+    # The .app bundle's on-disk filename, not just its Info.plist
+    # CFBundleName/CFBundleDisplayName below — Launchpad, the Dock, and
+    # Cmd+Tab's task switcher all use this filename as the displayed name.
+    name="Set TTRPG Portrait.app",
     icon=str(ICNS_PATH) if ICNS_PATH.exists() else None,
     bundle_identifier="com.lunarcloud.set-ttrpg-portrait",
     info_plist={
