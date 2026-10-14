@@ -168,6 +168,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.open_portrait_action.setShortcut(QKeySequence("Ctrl+Shift+O"))
         self.save_as_action.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.quit_action.setShortcut(QKeySequence.StandardKey.Quit)
+        self.about_action.setShortcut(QKeySequence.StandardKey.HelpContents)
         self.quit_action.setMenuRole(QAction.MenuRole.QuitRole)
         self.about_action.setMenuRole(QAction.MenuRole.AboutRole)
         self.open_sheet_action.triggered.connect(self._browse_sheet)
