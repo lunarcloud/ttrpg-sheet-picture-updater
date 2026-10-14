@@ -29,17 +29,10 @@ APP_ICON_NAME = "set-ttrpg-portrait.png"
 # Size used for the AppImage's own icon.
 APPIMAGE_ICON_SIZE = 256
 
-# Windows .ico embedded in the PyInstaller-frozen .exe (multi-resolution,
-# matching what Windows Explorer/taskbar request at different DPIs).
+# Windows .ico embedded in the PyInstaller-frozen .exe and the NSIS
+# installer/uninstaller (multi-resolution, matching what Windows Explorer/
+# taskbar request at different DPIs).
 ICO_SIZES = (16, 32, 48, 64, 128, 256)
-
-# MSIX tile/logo assets — sizes per Microsoft's packaging guidelines for
-# the two required "visual elements" image types (square app list icon,
-# square medium tile) plus the Package Store Association logo shown in
-# the installer UI (identity.properties.logo in nfpm.yaml).
-MSIX_SQUARE_150_SIZE = 150
-MSIX_SQUARE_44_SIZE = 44
-MSIX_STORE_LOGO_SIZE = 50
 
 # macOS .iconset source sizes — Apple's required name/size pairs for
 # `iconutil -c icns` (see build-macos.sh). The "@2x" variants are just a
@@ -85,22 +78,11 @@ def generate_appimage_icon(source: Image.Image) -> None:
 
 
 def generate_windows_ico(source: Image.Image) -> None:
-    """Multi-resolution .ico embedded in the MSIX build's PyInstaller .exe."""
-    out_dir = PACKAGING_DIR / "msix"
+    """Multi-resolution .ico embedded in the Windows build's PyInstaller
+    .exe and the NSIS installer/uninstaller (build-nsis.sh)."""
+    out_dir = PACKAGING_DIR / "windows"
     out_dir.mkdir(parents=True, exist_ok=True)
     source.save(out_dir / "icon.ico", format="ICO", sizes=[(s, s) for s in ICO_SIZES])
-
-
-def generate_msix_logos(source: Image.Image) -> None:
-    """MSIX visual-element logos referenced by nfpm.yaml's `overrides.msix`."""
-    out_dir = PACKAGING_DIR / "msix" / "Assets"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    for size, filename in (
-        (MSIX_SQUARE_150_SIZE, "Square150x150Logo.png"),
-        (MSIX_SQUARE_44_SIZE, "Square44x44Logo.png"),
-        (MSIX_STORE_LOGO_SIZE, "StoreLogo.png"),
-    ):
-        source.resize((size, size), Image.LANCZOS).save(out_dir / filename, format="PNG")
 
 
 def generate_macos_iconset(source: Image.Image) -> None:
@@ -118,12 +100,10 @@ def main() -> None:
     generate_hicolor_icons(source)
     generate_appimage_icon(source)
     generate_windows_ico(source)
-    generate_msix_logos(source)
     generate_macos_iconset(source)
     print(
         f"Generated icons for sizes {HICOLOR_SIZES} + AppImage icon + "
-        "Windows .ico + MSIX logos + macOS iconset from "
-        f"{SOURCE_ICON}"
+        f"Windows .ico + macOS iconset from {SOURCE_ICON}"
     )
 
 

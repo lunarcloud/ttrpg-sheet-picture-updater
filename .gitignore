@@ -382,14 +382,14 @@ ignore/
 !packaging/set-ttrpg-portrait.spec
 !packaging/set-ttrpg-portrait-gui.spec
 !packaging/set-ttrpg-portrait-appimage.spec
-!packaging/set-ttrpg-portrait-msix.spec
+!packaging/set-ttrpg-portrait-windows.spec
 !packaging/set-ttrpg-portrait-macos.spec
 !packaging/lib/
 !packaging/lib/*.sh
+!packaging/windows/installer.nsi
 packaging/icons/
 packaging/appimage/icon.png
-packaging/msix/icon.ico
-packaging/msix/Assets/
+packaging/windows/icon.ico
 packaging/macos/
 # Downloaded build-time binaries (nfpm, appimagetool) — fetched on demand by
 # ./setup.sh or packaging/lib/fetch-tools.sh; never committed.

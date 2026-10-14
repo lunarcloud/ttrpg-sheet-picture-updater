@@ -76,50 +76,9 @@ contents:
 # plain list of strings passed straight to dpkg/rpm — see nfpm's own
 # jsonschema, `$defs.Overridables.properties.depends`), so the same
 # Python package needs a different declared system-package name per format.
-# MSIX-specific settings (a top-level sibling of `contents`/`overrides`,
-# not nested under `overrides` — see nfpm's own Info struct). `arch: amd64`
-# above auto-maps to MSIX's "x64" nomenclature.
-#
-# `publisher` MUST exactly match the Subject of whatever certificate signs
-# the package (see `signature.pfx_file` below) — Windows refuses to install
-# an MSIX otherwise. This project has no paid code-signing certificate, so
-# build-msix.sh generates an ephemeral self-signed one at build time with
-# a matching Subject; see packaging/README.md's MSIX section for the
-# resulting "users must manually trust this certificate" caveat.
-msix:
-  publisher: "${MSIX_PUBLISHER}"
-  properties:
-    display_name: set-ttrpg-portrait
-    publisher_display_name: lunarcloud
-    # Referenced as a package-relative destination path, not a local file —
-    # see overrides.msix.contents below, which stages the actual PNG there.
-    logo: Assets/StoreLogo.png
-  applications:
-    - id: SetTtrpgPortrait
-      executable: app/set-ttrpg-portrait-launcher.exe
-      visual_elements:
-        square150x150_logo: Assets/Square150x150Logo.png
-        square44x44_logo: Assets/Square44x44Logo.png
-  signature:
-    pfx_file: "${MSIX_PFX_FILE}"
+# (Windows is not built with nfpm — see build-nsis.sh/packaging/README.md.)
 
 overrides:
-  # Replaces (not merges with) the shared `contents:` above — MSIX ships a
-  # PyInstaller-frozen one-dir build (build-msix.sh's `build/msix-stage/`)
-  # rather than this project's plain Python source, since the .deb/.rpm's
-  # "lean on the distro's own compiled packages" approach has no Windows
-  # equivalent.
-  msix:
-    contents:
-      - src: build/msix-stage/app/
-        dst: app/
-        type: tree
-      - src: packaging/msix/Assets/Square150x150Logo.png
-        dst: Assets/Square150x150Logo.png
-      - src: packaging/msix/Assets/Square44x44Logo.png
-        dst: Assets/Square44x44Logo.png
-      - src: packaging/msix/Assets/StoreLogo.png
-        dst: Assets/StoreLogo.png
   deb:
     depends:
       - python3 (>= 3.10)

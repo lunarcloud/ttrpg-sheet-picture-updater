@@ -99,7 +99,7 @@ def _rasterize_svg(path: str, dpi: float = SVG_RASTER_DPI) -> Image.Image:
 
     cairosvg is imported here, not at module scope, because it loads its
     native Cairo library via ``ctypes`` as soon as it's imported. The
-    frozen AppImage/MSIX/.dmg builds don't bundle or declare that native
+    frozen AppImage/Windows installer/.dmg builds don't bundle or declare that native
     library, so importing it eagerly would crash the whole app on startup
     on a machine without Cairo installed, instead of only failing to load
     this one SVG.

@@ -19,14 +19,14 @@ echo
 echo "Setup complete. Activate the environment with:"
 echo "  source .venv/bin/activate"
 
-# Packaging tools (nfpm, appimagetool, linuxdeploy) are only needed if
-# you're building .deb/.rpm/AppImage releases (packaging/build-*.sh), not
-# for everyday development. They're standalone binaries downloaded to
-# packaging/tools/ (gitignored) — never installed system-wide, never
-# committed to the repo.
+# Packaging tools (nfpm, appimagetool, linuxdeploy, makensis) are only
+# needed if you're building .deb/.rpm/AppImage/Windows-installer releases
+# (packaging/build-*.sh), not for everyday development. They're standalone
+# binaries downloaded to packaging/tools/ (gitignored) — never installed
+# system-wide, never committed to the repo.
 echo
 if [ -t 0 ]; then
-    read -r -p "Set up packaging tools too (nfpm, appimagetool, linuxdeploy — for building .deb/.rpm/AppImage releases)? [y/N] " REPLY
+    read -r -p "Set up packaging tools too (nfpm, appimagetool, linuxdeploy, makensis — for building .deb/.rpm/AppImage/Windows-installer releases)? [y/N] " REPLY
 else
     REPLY="n"  # non-interactive (e.g. CI): skip by default
 fi
@@ -36,6 +36,7 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
     fetch_nfpm
     fetch_appimagetool
     fetch_linuxdeploy
+    fetch_makensis
 else
     echo "Skipping packaging tools. Run ./setup.sh again anytime to add them."
 fi

@@ -1,12 +1,12 @@
-# PyInstaller spec for a reproducible one-dir build of the MSIX's combined
-# CLI+GUI launcher binary (set-ttrpg-portrait-launcher.exe).
+# PyInstaller spec for a reproducible one-dir build of the Windows NSIS
+# installer's combined CLI+GUI launcher binary (set-ttrpg-portrait-launcher.exe).
 #
 # Must run on a native Windows host (pikepdf ships platform-specific
 # compiled wheels — see packaging/README.md's "Build natively per
 # architecture" note).
 #
 # Usage (from repo root, with the project .venv active):
-#   .venv/Scripts/pyinstaller packaging/set-ttrpg-portrait-msix.spec
+#   .venv/Scripts/pyinstaller packaging/set-ttrpg-portrait-windows.spec
 #
 # Produces dist/set-ttrpg-portrait-launcher/ (a directory, NOT a single
 # file) — mirrors set-ttrpg-portrait-appimage.spec's one-dir Linux build
@@ -65,7 +65,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(REPO_ROOT / "packaging" / "msix" / "icon.ico"),
+    icon=str(REPO_ROOT / "packaging" / "windows" / "icon.ico"),
 )
 
 coll = COLLECT(

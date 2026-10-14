@@ -1,4 +1,4 @@
-# Packaging: `.deb`, `.rpm`, AppImage, MSIX, macOS `.dmg`
+# Packaging: `.deb`, `.rpm`, AppImage, Windows installer, macOS `.dmg`
 
 Four different strategies, chosen per-format:
 
@@ -37,41 +37,34 @@ Four different strategies, chosen per-format:
   GL/EGL/Mesa and base X11). No distro package manager or system Python
   needed at all — this is the right choice for one-off/portable use, or
   distros the `.deb`/`.rpm` don't cover.
-- **Windows `.msix`** (via `build-msix.sh`/`set-ttrpg-portrait-msix.spec`)
+- **Windows installer `.exe`** (via `build-nsis.sh`/
+  `set-ttrpg-portrait-windows.spec`/`packaging/windows/installer.nsi`)
   mirrors the AppImage's approach — a PyInstaller-frozen one-dir build of
-  the same combined CLI+GUI launcher, just targeting Windows. nfpm builds
-  both deb/rpm and `.msix` from the same `packaging/nfpm.yaml` (its
-  `overrides.msix.contents` replaces the shared Linux `contents:` list
-  with the MSIX-specific staged files — see that file's comments). Note
-  that nfpm supports `.msix` (Microsoft's modern app package format), not
-  the older `.msi` installer format.
+  the same combined CLI+GUI launcher, just targeting Windows, wrapped into
+  a standard NSIS installer `.exe` via `makensis`.
   - **Must be built on a native Windows host** (`.github/workflows/
     release.yml`'s `windows-latest` runner) — `pikepdf`'s platform-specific
     compiled wheel means the frozen `.exe` can't be cross-built from
-    Linux/macOS, same constraint as the AppImage. nfpm's own MSIX packaging
-    logic is pure Go, though, so `packaging/nfpm.yaml`'s `overrides.msix`
-    section can be tested/validated using the Linux `nfpm` binary against a
-    placeholder `.exe` without needing a Windows host at all.
-  - **Signing**: Windows generally refuses to install an MSIX unless it's
-    signed, even with a self-signed certificate. This project has no paid
-    code-signing certificate, so `build-msix.sh` generates an ephemeral
-    self-signed one at build time (via PowerShell's
-    `New-SelfSignedCertificate`, see `packaging/lib/generate-msix-cert.sh`)
-    whenever `MSIX_PFX_FILE` isn't supplied, and also exports its public
-    half as a `.cer` alongside the `.msix`. **End users must manually
-    import/trust that `.cer`** (e.g. `certutil -addstore TrustedPeople
-    <cert.cer>`, or PowerShell's `Import-Certificate -CertStoreLocation
-    Cert:\LocalMachine\TrustedPeople`) before Windows will allow installing
-    the package — there's no way around this without a real, paid
-    code-signing certificate. If/when one is available, set `MSIX_PFX_FILE`
-    (and `MSIX_PFX_PASSPHRASE`) to use it instead, and that manual-trust
-    step becomes unnecessary.
-  - The MSIX's `publisher` field (`packaging/nfpm.yaml`'s `msix.publisher`,
-    default `CN=lunarcloud` via `MSIX_PUBLISHER`) must exactly match
-    whichever certificate's Subject signs it.
+    Linux/macOS, same constraint as the AppImage. `makensis` itself is
+    already preinstalled on `windows-latest` runners; for local builds,
+    see `fetch_makensis` in `packaging/lib/fetch-tools.sh`, or install NSIS
+    yourself from <https://nsis.sourceforge.io/>.
+  - Installs per-user (to `%LOCALAPPDATA%\Programs\set-ttrpg-portrait`,
+    registry entries under `HKCU`) — no admin/UAC elevation required.
+  - **No signing**: this project previously shipped a `.msix`, but MSIX
+    packages must be signed even with a self-signed certificate, and
+    without a paid code-signing certificate, end users had to manually
+    import/trust an ephemeral self-signed one before Windows would even
+    install the package — a confusing, error-prone step. The NSIS `.exe`
+    is unsigned instead: end users just see a dismissable Windows
+    SmartScreen "Windows protected your PC" prompt the first time they run
+    it (click "More info" then "Run anyway") — no certificate import step
+    at all. If a paid code-signing certificate becomes available later,
+    `build-nsis.sh` could be extended to sign the output with
+    `signtool.exe`.
 - **macOS `.dmg`** (via `build-macos.sh`/`set-ttrpg-portrait-macos.spec`),
   **Apple Silicon (arm64) only — no Intel build is produced.** Like the
-  AppImage/MSIX, it's a PyInstaller-frozen one-dir build of the same
+  AppImage/Windows installer, it's a PyInstaller-frozen one-dir build of the same
   combined CLI+GUI launcher, wrapped in a PyInstaller `BUNDLE()` to produce
   a standard `set-ttrpg-portrait.app`, then packaged into a `.dmg` with
   `hdiutil` (built into every macOS host — no extra packaging tool needed,
@@ -84,7 +77,7 @@ Four different strategies, chosen per-format:
   - **Must be built on a native macOS arm64 host** (`.github/workflows/
     release.yml`'s `macos-latest` runner, which is Apple Silicon by
     default) — same `pikepdf` compiled-wheel constraint as the AppImage/
-    MSIX.
+    Windows installer.
   - **Icon**: `packaging/icon/generate_icons.py` generates the required
     `AppIcon.iconset/` PNGs (cross-platform, Pillow-only), but converting
     that to the final `.icns` needs a dedicated tool — `build-macos.sh`
@@ -111,7 +104,8 @@ Four different strategies, chosen per-format:
     `set_ttrpg_portrait/image_prep.py`) depends on `libcairo` being
     loadable at runtime via `ctypes.util.find_library`. Unlike the
     `.deb`/`.rpm` (which declare it as a system package dependency), none
-    of the frozen builds (AppImage/MSIX/`.dmg`) bundle or declare it. Since
+    of the frozen builds (AppImage/Windows installer/`.dmg`) bundle or
+    declare it. Since
     cairocffi loads it with `ctypes` at *import* time rather than lazily,
     `image_prep.py` imports `cairosvg` only inside `_rasterize_svg()`
     (not at module scope) so a missing Cairo install only breaks loading
@@ -135,15 +129,18 @@ Four different strategies, chosen per-format:
 - **`linuxdeploy`** — also required by `build-appimage.sh`. Statically
   discovers and bundles the AppImage's missing system-library
   dependencies (see above).
+- **`makensis` (NSIS)** — required by `build-nsis.sh`. Already preinstalled
+  on `windows-latest` CI runners, so no fetch step is needed there; for
+  local Windows dev builds it's fetched the same way as the other tools
+  below (NSIS's "portable" zip, no install step needed).
 
-All three tools are fetched on demand to `packaging/tools/` (gitignored,
+All four tools are fetched on demand to `packaging/tools/` (gitignored,
 never committed, never installed system-wide) — run `./setup.sh` from the
 repo root and answer "y" to the "Set up packaging tools too?" prompt, or run
 `packaging/lib/fetch-tools.sh`'s `fetch_nfpm`/`fetch_appimagetool`/
-`fetch_linuxdeploy` functions directly. The `build-*.sh` scripts will tell
-you to do this if a tool is missing, rather than downloading it themselves
-mid-build. `fetch_nfpm` detects Git Bash on Windows (via `uname -s`) and
-fetches nfpm's separate Windows release asset automatically.
+`fetch_linuxdeploy`/`fetch_makensis` functions directly. The `build-*.sh`
+scripts will tell you to do this if a tool is missing, rather than
+downloading it themselves mid-build.
 
 ## Usage
 
@@ -154,7 +151,7 @@ From the repo root, with `.venv` set up (`./setup.sh`):
 ./packaging/build-rpm.sh        # -> dist/packages/set-ttrpg-portrait-<version>-1.x86_64.rpm
 ./packaging/build-appimage.sh   # -> dist/packages/set-ttrpg-portrait-<version>-x86_64.AppImage
 ./packaging/build-all.sh        # builds all three Linux artifacts above
-./packaging/build-msix.sh       # -> dist/packages/set-ttrpg-portrait-<version>-x64.msix (Windows only)
+./packaging/build-nsis.sh       # -> dist/packages/set-ttrpg-portrait-<version>-x64-setup.exe (Windows only)
 ./packaging/build-macos.sh      # -> dist/packages/set-ttrpg-portrait-<version>-arm64.dmg (macOS arm64 only)
 ```
 
@@ -188,7 +185,7 @@ script's test coverage.
 Only `icon/icon-source.png` is a committed file — a hand-drawn (or, until
 real artwork is provided, a generated placeholder showing safe-zone guides)
 master icon. Every other icon file (`icons/hicolor/**/apps/set-ttrpg-portrait.png`,
-`appimage/icon.png`, `msix/icon.ico`, `msix/Assets/*.png`,
+`appimage/icon.png`, `windows/icon.ico`,
 `macos/AppIcon.iconset/*.png`, `macos/AppIcon.icns`) is generated by
 `icon/generate_icons.py` (plus `build-macos.sh`'s `.icns` conversion step)
 and gitignored — this is the single source of truth; nothing derived from
@@ -197,9 +194,9 @@ it is ever hand-maintained or committed.
 ## Build natively per architecture
 
 `pikepdf` ships platform-specific compiled wheels, so the AppImage's,
-MSIX's, and macOS .dmg's PyInstaller builds must each run natively on
-their target OS/arch (Linux x86_64, Windows x64, and macOS arm64
-respectively — see `.github/workflows/
+Windows installer's, and macOS .dmg's PyInstaller builds must each run
+natively on their target OS/arch (Linux x86_64, Windows x64, and macOS
+arm64 respectively — see `.github/workflows/
 release.yml`'s separate `ubuntu-latest`/`windows-latest`/`macos-latest`
 jobs). The `.deb`/`.rpm` themselves are pure Python (no compiled wheel of
 our own to bundle), so this constraint doesn't apply to them directly —

@@ -1,18 +1,19 @@
 name: Release
 
-# Builds the .deb/.rpm/AppImage/.msix/macOS .dmg packages
-# (packaging/build-all.sh + build-msix.sh + build-macos.sh), verifies the
+# Builds the .deb/.rpm/AppImage/Windows-installer/macOS .dmg packages
+# (packaging/build-all.sh + build-nsis.sh + build-macos.sh), verifies the
 # .deb/.rpm actually install and run on real Debian/Fedora systems (see
 # "test-deb-install"/"test-rpm-install" below — this is the whole point of
 # packaging/nfpm.yaml's `depends` relying on those distros' own
 # python3-pyqt6/etc packages instead of bundling everything, so it's worth
 # catching a wrong/missing package name before it reaches a release), then
 # attaches all five artifacts to the GitHub Release whenever one is
-# published. The Linux artifacts build on ubuntu-latest, the .msix builds
-# on windows-latest, and the .dmg builds on macos-latest (Apple Silicon by
-# default), each matching packaging/README.md's "build natively per
-# architecture" note (pikepdf ships platform-specific wheels) — x86_64
-# Linux + x64 Windows + arm64 macOS only (no Intel Mac build).
+# published. The Linux artifacts build on ubuntu-latest, the Windows
+# installer builds on windows-latest, and the .dmg builds on
+# macos-latest (Apple Silicon by default), each matching
+# packaging/README.md's "build natively per architecture" note (pikepdf
+# ships platform-specific wheels) — x86_64 Linux + x64 Windows + arm64
+# macOS only (no Intel Mac build).
 #
 # Versioning: releases must be tagged "release/<version>" (e.g.
 # "release/1.2.3") or "v<version>" (e.g. "v1.2.3"). The very first step
@@ -152,7 +153,7 @@ jobs:
           set-ttrpg-portrait --help
           timeout 10 set-ttrpg-portrait-gui || [ "$?" -eq 124 ]
 
-  build-windows-msix:
+  build-windows-installer:
     runs-on: windows-latest
     defaults:
       run:
@@ -179,21 +180,15 @@ jobs:
           .venv/Scripts/python.exe -m pip install --upgrade pip
           .venv/Scripts/python.exe -m pip install -e ".[dev]"
 
-      - name: Fetch packaging tools (nfpm)
-        run: |
-          # shellcheck source=packaging/lib/fetch-tools.sh
-          source packaging/lib/fetch-tools.sh
-          fetch_nfpm
+      - name: Build installer .exe
+        # NSIS (makensis) is preinstalled on windows-latest runners — no
+        # packaging-tools fetch step needed, unlike nfpm/appimagetool.
+        # Unsigned (no paid code-signing certificate), so end users see a
+        # dismissable SmartScreen "unknown publisher" prompt on first run
+        # — see packaging/README.md's Windows section.
+        run: ./packaging/build-nsis.sh
 
-      - name: Build .msix
-        # No MSIX_PFX_FILE supplied (no paid code-signing certificate) —
-        # build-msix.sh generates an ephemeral self-signed one instead and
-        # exports its public .cer alongside the package. See
-        # packaging/README.md's MSIX section for the resulting
-        # "end users must manually trust this certificate" caveat.
-        run: ./packaging/build-msix.sh
-
-      - name: Upload built MSIX as a workflow artifact
+      - name: Upload built installer as a workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: packages-windows
@@ -244,7 +239,7 @@ jobs:
         build,
         test-deb-install,
         test-rpm-install,
-        build-windows-msix,
+        build-windows-installer,
         build-macos-dmg,
       ]
     runs-on: ubuntu-latest

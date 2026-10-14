@@ -41,7 +41,7 @@ class SvgSupportUnavailableError(SetTtrpgPortraitError):
 
     cairosvg (via cairocffi) loads Cairo with ``ctypes`` at import time, so
     a missing native library would otherwise crash the whole app on
-    startup in the frozen AppImage/MSIX/.dmg builds (none of which bundle
+    startup in the frozen AppImage/Windows installer/.dmg builds (none of which bundle
     or declare it as a system dependency, unlike the .deb/.rpm). Importing
     cairosvg lazily, only when an SVG is actually opened, confines that
     failure to "this one file can't be loaded" instead.

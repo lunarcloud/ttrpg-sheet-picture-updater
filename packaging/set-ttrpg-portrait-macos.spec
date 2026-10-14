@@ -14,8 +14,9 @@
 #   .venv/bin/pyinstaller packaging/set-ttrpg-portrait-macos.spec
 #
 # Produces dist/set-ttrpg-portrait-launcher/ (one-dir, same as the
-# AppImage/MSIX specs) AND dist/set-ttrpg-portrait.app (the BUNDLE()
-# wrapping it) — build-macos.sh packages the latter into the final .dmg.
+# AppImage/Windows installer specs) AND dist/set-ttrpg-portrait.app (the
+# BUNDLE() wrapping it) — build-macos.sh packages the latter into the
+# final .dmg.
 
 import pathlib
 
