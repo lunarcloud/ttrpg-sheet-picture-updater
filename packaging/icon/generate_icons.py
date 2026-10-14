@@ -102,8 +102,7 @@ def main() -> None:
     generate_windows_ico(source)
     generate_macos_iconset(source)
     print(
-        f"Generated icons for sizes {HICOLOR_SIZES} + AppImage icon + "
-        f"Windows .ico + macOS iconset from {SOURCE_ICON}"
+        f"Generated icons for sizes {HICOLOR_SIZES} + AppImage icon + Windows .ico + macOS iconset from {SOURCE_ICON}"
     )
 
 
