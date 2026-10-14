@@ -13,10 +13,13 @@
 # (same combined CLI+GUI entry point, see set_ttrpg_portrait/launcher.py),
 # just with a Windows .exe and .ico instead of a Linux binary.
 #
-# `console=True` means a console window is attached even when launched
-# with no arguments (defaulting to the GUI) — matching the AppImage spec's
-# own choice to keep one combined binary rather than separate windowed/
-# console builds; see packaging/README.md for the tradeoff.
+# `console=False` (windowed subsystem) so double-clicking the .exe (GUI
+# mode) doesn't flash a console window open first, unlike Linux/macOS
+# where no such OS-level subsystem concept exists for the AppImage/.dmg
+# builds. CLI usage (args other than none/`--gui`) still needs its
+# output visible, so set_ttrpg_portrait/launcher.py's `main()` attaches to
+# the invoking terminal's existing console in that case instead — see its
+# `_attach_windows_console()` docstring.
 
 import pathlib
 
@@ -59,7 +62,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=True,
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
