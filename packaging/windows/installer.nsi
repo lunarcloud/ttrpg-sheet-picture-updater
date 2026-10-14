@@ -27,7 +27,13 @@
 
 !include "MUI2.nsh"
 
-Name "set-ttrpg-portrait"
+; Friendly display name shown in the installer UI, Start Menu, and
+; Add/Remove Programs — kept separate from the kebab-case install
+; dir/registry key names below (changing those would complicate
+; upgrade/uninstall lookups for existing installs).
+!define APP_NAME "Set TTRPG Portrait"
+
+Name "${APP_NAME}"
 OutFile "${OUT_FILE}"
 Unicode True
 InstallDir "$LOCALAPPDATA\Programs\set-ttrpg-portrait"
@@ -36,7 +42,7 @@ RequestExecutionLevel user
 Icon "${ICON_FILE}"
 UninstallIcon "${ICON_FILE}"
 VIProductVersion "${VERSION_NUMERIC}"
-VIAddVersionKey "ProductName" "set-ttrpg-portrait"
+VIAddVersionKey "ProductName" "${APP_NAME}"
 VIAddVersionKey "ProductVersion" "${VERSION}"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "FileDescription" "Embed a portrait image into a fillable TTRPG character sheet PDF"
@@ -46,7 +52,7 @@ VIAddVersionKey "LegalCopyright" "lunarcloud"
 !define MUI_ICON "${ICON_FILE}"
 !define MUI_UNICON "${ICON_FILE}"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\set-ttrpg-portrait-launcher.exe"
-!define MUI_FINISHPAGE_RUN_TEXT "Launch set-ttrpg-portrait"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch ${APP_NAME}"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
@@ -67,13 +73,13 @@ Section "Install" SEC_INSTALL
     WriteRegStr HKCU "Software\set-ttrpg-portrait" "InstallDir" "$INSTDIR"
     WriteUninstaller "$INSTDIR\uninstall.exe"
 
-    CreateDirectory "$SMPROGRAMS\set-ttrpg-portrait"
-    CreateShortcut "$SMPROGRAMS\set-ttrpg-portrait\set-ttrpg-portrait.lnk" \
+    CreateDirectory "$SMPROGRAMS\${APP_NAME}"
+    CreateShortcut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" \
         "$INSTDIR\set-ttrpg-portrait-launcher.exe" "" "$INSTDIR\set-ttrpg-portrait-launcher.exe"
-    CreateShortcut "$SMPROGRAMS\set-ttrpg-portrait\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+    CreateShortcut "$SMPROGRAMS\${APP_NAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 
     ; HKCU (not HKLM) so this matches the per-user, no-elevation install.
-    WriteRegStr HKCU "${UNINST_KEY}" "DisplayName" "set-ttrpg-portrait"
+    WriteRegStr HKCU "${UNINST_KEY}" "DisplayName" "${APP_NAME}"
     WriteRegStr HKCU "${UNINST_KEY}" "DisplayVersion" "${VERSION}"
     WriteRegStr HKCU "${UNINST_KEY}" "Publisher" "lunarcloud"
     WriteRegStr HKCU "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
@@ -85,7 +91,7 @@ SectionEnd
 
 Section "Uninstall"
     RMDir /r "$INSTDIR"
-    RMDir /r "$SMPROGRAMS\set-ttrpg-portrait"
+    RMDir /r "$SMPROGRAMS\${APP_NAME}"
     DeleteRegKey HKCU "${UNINST_KEY}"
     DeleteRegKey HKCU "Software\set-ttrpg-portrait"
 SectionEnd

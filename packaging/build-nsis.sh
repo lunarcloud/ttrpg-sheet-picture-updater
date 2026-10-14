@@ -62,6 +62,27 @@ echo "Generating packaging icons (including the Windows .ico) from the master so
 echo "Building the combined CLI+GUI launcher .exe with PyInstaller..."
 (cd "$REPO_ROOT" && "$PYTHON" -m PyInstaller "$SCRIPT_DIR/set-ttrpg-portrait-windows.spec" --noconfirm)
 
+# Qt6Core.dll hard-imports icuuc.dll/icuin.dll/icudt*.dll (ICU, for
+# Unicode/locale support) — PyInstaller's own dependency scan usually
+# finds and bundles these automatically from the build machine's
+# C:\Windows\System32 (where they ship as a base OS component on Windows
+# 10 1703+/11), but we copy them in explicitly too so the installer stays
+# self-contained even if that auto-detection ever misses them, or the
+# *target* machine is missing/has an older copy (e.g. Windows Sandbox,
+# Server Core, older LTSC builds) — see packaging/README.md.
+QT_BIN_DIR="$(find "$REPO_ROOT/dist/$LAUNCHER_NAME" -type d -path '*/PyQt6/Qt6/bin' -print -quit)"
+if [ -n "$QT_BIN_DIR" ]; then
+    for pattern in icuuc icuin icudt; do
+        for f in /c/Windows/System32/"$pattern"*.dll; do
+            if [ -f "$f" ]; then
+                cp -n "$f" "$QT_BIN_DIR/"
+            fi
+        done
+    done
+else
+    echo "Warning: couldn't find PyQt6/Qt6/bin in the PyInstaller output — skipping ICU DLL bundling." >&2
+fi
+
 mkdir -p "$OUT_DIR"
 OUT_FILE="$OUT_DIR/set-ttrpg-portrait-${VERSION}-x64-setup.exe"
 
