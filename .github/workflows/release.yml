@@ -45,7 +45,7 @@ jobs:
           version="$(cat .VERSION-PLACEHOLDER)"
           echo "Resolved version: $version"
           if [ "$version" = "0.0.0" ]; then
-            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't match 'release/<version>' or 'v<version>' — building as 0.0.0."
+            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't start with 'v' — building as 0.0.0."
           fi
 
       - uses: actions/setup-python@v7
@@ -167,7 +167,7 @@ jobs:
           version="$(cat .VERSION-PLACEHOLDER)"
           echo "Resolved version: $version"
           if [ "$version" = "0.0.0" ]; then
-            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't match 'release/<version>' or 'v<version>' — building as 0.0.0."
+            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't start with 'v' — building as 0.0.0."
           fi
 
       - uses: actions/setup-python@v7
@@ -217,7 +217,7 @@ jobs:
           version="$(cat .VERSION-PLACEHOLDER)"
           echo "Resolved version: $version"
           if [ "$version" = "0.0.0" ]; then
-            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't match 'release/<version>' or 'v<version>' — building as 0.0.0."
+            echo "::warning::Release tag '$GITHUB_REF_NAME' doesn't start with 'v' — building as 0.0.0."
           fi
 
       - uses: actions/setup-python@v7
