@@ -13,6 +13,7 @@ import sys
 
 import pytest
 from PyQt6.QtCore import QThread
+from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QApplication
 
 from set_ttrpg_portrait.gui.main_window import MainWindow
@@ -83,5 +84,50 @@ def test_close_after_finished_job_does_not_crash(qapp: QApplication) -> None:
 
         assert window._thread is None
         window.close()  # must not raise
+    finally:
+        window.close()
+
+
+def test_menu_actions_follow_button_state(qapp: QApplication, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Menus cannot browse or save while the corresponding buttons are disabled."""
+    window = MainWindow()
+    try:
+        assert window.menuBar().actions()
+        assert window.quit_action.menuRole() == QAction.MenuRole.QuitRole
+        assert window.about_action.menuRole() == QAction.MenuRole.AboutRole
+        assert window.open_sheet_action.shortcut() == QKeySequence(QKeySequence.StandardKey.Open)
+        assert window.open_portrait_action.shortcut() == QKeySequence("Ctrl+Shift+O")
+        assert window.save_as_action.shortcut() == QKeySequence(QKeySequence.StandardKey.SaveAs)
+        assert window.quit_action.shortcut() == QKeySequence(QKeySequence.StandardKey.Quit)
+        assert not window.save_as_action.isEnabled()
+        window._set_inputs_enabled(False)
+        assert not window.open_sheet_action.isEnabled()
+        assert not window.open_portrait_action.isEnabled()
+        window._set_inputs_enabled(True)
+        assert window.open_sheet_action.isEnabled()
+        assert window.open_portrait_action.isEnabled()
+        monkeypatch.setattr(window, "_render_preview", lambda path: None)
+        window._on_success("synthetic-output.pdf")
+        assert window.save_button.isEnabled()
+        assert window.save_as_action.isEnabled()
+        window._reset_output()
+        assert not window.save_as_action.isEnabled()
+    finally:
+        window.close()
+
+
+def test_menu_browse_uses_existing_file_picker(qapp: QApplication, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The File menu routes through the same picker and input logic as Browse."""
+    from unittest.mock import Mock
+
+    from PyQt6.QtWidgets import QFileDialog
+
+    picker = Mock(return_value=("synthetic-sheet.pdf", "PDF files (*.pdf)"))
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", picker)
+    window = MainWindow()
+    try:
+        window.open_sheet_action.trigger()
+        assert window._sheet_path == "synthetic-sheet.pdf"
+        picker.assert_called_once_with(window, "Select fillable PDF sheet", "", "PDF files (*.pdf)")
     finally:
         window.close()

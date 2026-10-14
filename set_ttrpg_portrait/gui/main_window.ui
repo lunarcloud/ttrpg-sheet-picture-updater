@@ -157,6 +157,54 @@ by opening it in Qt Designer/`pyuic6`'s companion tool `designer`.
     </item>
    </layout>
   </widget>
+  <widget class="QMenuBar" name="menubar">
+   <widget class="QMenu" name="file_menu">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="open_sheet_action"/>
+    <addaction name="open_portrait_action"/>
+    <addaction name="save_as_action"/>
+    <addaction name="separator"/>
+    <addaction name="quit_action"/>
+   </widget>
+   <widget class="QMenu" name="help_menu">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="about_action"/>
+   </widget>
+   <addaction name="file_menu"/>
+   <addaction name="help_menu"/>
+  </widget>
+  <action name="open_sheet_action">
+   <property name="text">
+    <string>Open &amp;Sheet…</string>
+   </property>
+  </action>
+  <action name="open_portrait_action">
+   <property name="text">
+    <string>Open &amp;Portrait…</string>
+   </property>
+  </action>
+  <action name="save_as_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Save As…</string>
+   </property>
+  </action>
+  <action name="quit_action">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+  </action>
+  <action name="about_action">
+   <property name="text">
+    <string>&amp;About Set TTRPG Portrait</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

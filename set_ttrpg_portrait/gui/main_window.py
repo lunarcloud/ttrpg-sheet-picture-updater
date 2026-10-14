@@ -30,7 +30,7 @@ from pathlib import Path
 
 from PIL import Image
 from PyQt6.QtCore import QEvent, QObject, QThread
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QAction, QKeySequence, QPixmap
 from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox
 
 from set_ttrpg_portrait import __version__
@@ -157,6 +157,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.portrait_clear_button.clicked.connect(self._clear_portrait)
         self.save_button.clicked.connect(self._save_as)
         self.change_field_button.clicked.connect(self._change_field)
+        self.open_sheet_action.setShortcut(QKeySequence.StandardKey.Open)
+        self.open_portrait_action.setShortcut(QKeySequence("Ctrl+Shift+O"))
+        self.save_as_action.setShortcut(QKeySequence.StandardKey.SaveAs)
+        self.quit_action.setShortcut(QKeySequence.StandardKey.Quit)
+        self.quit_action.setMenuRole(QAction.MenuRole.QuitRole)
+        self.about_action.setMenuRole(QAction.MenuRole.AboutRole)
+        self.open_sheet_action.triggered.connect(self._browse_sheet)
+        self.open_portrait_action.triggered.connect(self._browse_portrait)
+        self.save_as_action.triggered.connect(self._save_as)
+        self.quit_action.triggered.connect(self.close)
+        self.about_action.triggered.connect(self._show_about)
 
         # Accept dropped files on the two path fields, and on the preview
         # (sorted by extension: a dropped PDF becomes the sheet, a dropped
@@ -170,6 +181,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for widget in self._drop_targets:
             widget.setAcceptDrops(True)
             widget.installEventFilter(self)
+
+    def _show_about(self) -> None:
+        QMessageBox.about(
+            self,
+            "About Set TTRPG Portrait",
+            f"Set TTRPG Portrait {__version__}\n\nEmbed a portrait in a fillable character sheet PDF.",
+        )
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802
         """Handle drag-and-drop of files onto the path fields and preview.
@@ -284,6 +302,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """Discard any previous preview/output — inputs no longer match it."""
         self._cleanup_temp_output()
         self.save_button.setEnabled(False)
+        self.save_as_action.setEnabled(False)
         self.change_field_button.setEnabled(False)
         self._preview_pixmap = None
         self.preview_label.setText("No preview yet.")
@@ -312,6 +331,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._busy = True
         self._set_inputs_enabled(False)
         self.save_button.setEnabled(False)
+        self.save_as_action.setEnabled(False)
         self.change_field_button.setEnabled(False)
         self.status_label.setText("Processing…")
 
@@ -357,12 +377,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.portrait_clear_button,
         ):
             widget.setEnabled(enabled)
+        self.open_sheet_action.setEnabled(enabled)
+        self.open_portrait_action.setEnabled(enabled)
 
     def _on_success(self, output_path: str) -> None:
         self._busy = False
         self._set_inputs_enabled(True)
         self._render_preview(output_path)
         self.save_button.setEnabled(True)
+        self.save_as_action.setEnabled(True)
         if len(self._field_candidates) > 1:
             self.change_field_button.setVisible(True)
             self.change_field_button.setEnabled(True)

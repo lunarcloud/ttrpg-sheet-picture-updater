@@ -85,6 +85,12 @@ app = BUNDLE(
     icon=str(ICNS_PATH) if ICNS_PATH.exists() else None,
     bundle_identifier="com.lunarcloud.set-ttrpg-portrait",
     info_plist={
+        # Keep the console bootloader for CLI use, but override its
+        # background-only default so Finder launches a normal Dock app.
+        "LSBackgroundOnly": False,
+        "LSUIElement": False,
+        "CFBundleName": "Set TTRPG Portrait",
+        "CFBundleDisplayName": "Set TTRPG Portrait",
         "NSHighResolutionCapable": True,
         "NSHumanReadableCopyright": "lunarcloud",
         "LSApplicationCategoryType": "public.app-category.utilities",

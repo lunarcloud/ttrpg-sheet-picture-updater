@@ -76,6 +76,14 @@ Four different strategies, chosen per-format:
   Advanced users wanting CLI access can invoke
   `/Applications/set-ttrpg-portrait.app/Contents/MacOS/set-ttrpg-portrait-launcher`
   directly, or symlink it onto their own `PATH`.
+  The bundle explicitly disables `LSBackgroundOnly` and `LSUIElement` so
+  it appears in the Dock and Command-Tab switcher even though it keeps a
+  console-capable launcher for CLI access. Qt supplies the native macOS
+  menu bar (including About and Quit in the application menu) and native
+  Open/Save dialogs; the XDG portal theme is selected only on Linux.
+  The application menu is named **Set TTRPG Portrait**. Open Sheet uses
+  Command-O, and Open Portrait uses Command-Shift-O (Ctrl-O and
+  Ctrl-Shift-O respectively on Linux/Windows).
   - **Must be built on a native macOS arm64 host** (`.github/workflows/
     release.yml`'s `macos-latest` runner, which is Apple Silicon by
     default) — same `pikepdf` compiled-wheel constraint as the AppImage/
@@ -208,4 +216,3 @@ but they still declare `arch: amd64` in `packaging/nfpm.yaml` to match the
 other artifacts, since the system packages they depend on are
 architecture-specific anyway. macOS support is Apple Silicon (arm64) only
 — no Intel build is produced.
-

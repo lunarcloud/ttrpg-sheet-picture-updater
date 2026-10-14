@@ -23,8 +23,10 @@ def main(argv: list[str] | None = None) -> int:
     # `xdg-desktop-portal` service (+ a desktop-specific backend) to be
     # running, which is standard on modern desktop Linux distros; falls
     # back to Qt's own dialog if it isn't available.
-    os.environ.setdefault("QT_QPA_PLATFORMTHEME", "xdgdesktopportal")
+    if sys.platform.startswith("linux"):
+        os.environ.setdefault("QT_QPA_PLATFORMTHEME", "xdgdesktopportal")
     app = QApplication(argv if argv is not None else sys.argv)
+    app.setApplicationName("Set TTRPG Portrait")
     # Without this, launching outside a `.desktop` entry (e.g. running the
     # AppImage/frozen binary directly, or `python -m set_ttrpg_portrait.gui`
     # in dev) shows a generic X11/Wayland window icon instead of our own.
