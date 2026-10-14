@@ -120,6 +120,7 @@ def test_menu_browse_uses_existing_file_picker(qapp: QApplication, monkeypatch: 
     """The File menu routes through the same picker and input logic as Browse."""
     from unittest.mock import Mock
 
+    from PyQt6.QtCore import QStandardPaths
     from PyQt6.QtWidgets import QFileDialog
 
     picker = Mock(return_value=("synthetic-sheet.pdf", "PDF files (*.pdf)"))
@@ -128,6 +129,7 @@ def test_menu_browse_uses_existing_file_picker(qapp: QApplication, monkeypatch: 
     try:
         window.open_sheet_action.trigger()
         assert window._sheet_path == "synthetic-sheet.pdf"
-        picker.assert_called_once_with(window, "Select fillable PDF sheet", "", "PDF files (*.pdf)")
+        documents_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
+        picker.assert_called_once_with(window, "Select fillable PDF sheet", documents_dir, "PDF files (*.pdf)")
     finally:
         window.close()

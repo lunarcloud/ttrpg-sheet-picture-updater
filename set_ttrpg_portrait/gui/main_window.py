@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 from PIL import Image
-from PyQt6.QtCore import QEvent, QObject, QThread
+from PyQt6.QtCore import QEvent, QObject, QStandardPaths, QThread
 from PyQt6.QtGui import QAction, QKeySequence, QPixmap
 from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox
 
@@ -121,6 +121,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._sheet_path: str | None = None
         self._portrait_path: str | None = None
         self._temp_output_path: str | None = None
+        # Shared across both "Open…" dialogs (sheet and portrait) so
+        # picking either kind of file sets where the other one's dialog
+        # opens next too — only the very first dialog (of either kind)
+        # falls back to a standard per-kind folder (Documents/Pictures).
+        self._last_browse_dir: str | None = None
         self._thread: QThread | None = None
         self._worker: ApplyWorker | None = None
         # True for the whole span of one job, from `_process()` starting
@@ -262,18 +267,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._maybe_auto_process()
 
     def _browse_sheet(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Select fillable PDF sheet", "", "PDF files (*.pdf)")
+        start_dir = self._last_browse_dir or QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DocumentsLocation
+        )
+        path, _ = QFileDialog.getOpenFileName(self, "Select fillable PDF sheet", start_dir, "PDF files (*.pdf)")
         if path:
+            self._last_browse_dir = os.path.dirname(path)
             self._set_sheet(path)
 
     def _browse_portrait(self) -> None:
+        start_dir = self._last_browse_dir or QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation
+        )
         path, _ = QFileDialog.getOpenFileName(
             self,
             "Select portrait image",
-            "",
+            start_dir,
             _PORTRAIT_FILE_FILTER,
         )
         if path:
+            self._last_browse_dir = os.path.dirname(path)
             self._set_portrait(path)
 
     def _clear_sheet(self) -> None:
@@ -495,7 +508,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         default_name = "character.pdf"
         if self._sheet_path:
             base = os.path.splitext(os.path.basename(self._sheet_path))[0]
-            default_name = f"{base}-with-portrait.pdf"
+            default_name = os.path.join(os.path.dirname(self._sheet_path), f"{base}-with-portrait.pdf")
         path, _ = QFileDialog.getSaveFileName(self, "Save sheet as", default_name, "PDF files (*.pdf)")
         if not path:
             return
