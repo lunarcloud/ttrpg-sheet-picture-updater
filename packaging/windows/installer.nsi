@@ -8,12 +8,18 @@
 ;
 ; Built by packaging/build-nsis.sh via makensis, with these values passed
 ; in as /D command-line defines (never hand-edit them here):
-;   VERSION    e.g. "1.2.3" (from .VERSION-PLACEHOLDER)
-;   STAGE_DIR  absolute path to the PyInstaller one-dir build to bundle
-;              (dist/set-ttrpg-portrait-launcher/, see
-;              set-ttrpg-portrait-windows.spec)
-;   ICON_FILE  absolute path to packaging/windows/icon.ico
-;   OUT_FILE   absolute path the finished installer .exe is written to
+;   VERSION          e.g. "1.2.3" or "2.0.0-alpha.6" (from
+;                    .VERSION-PLACEHOLDER) — used for display purposes
+;                    (DisplayVersion, ProductVersion, FileVersion keys).
+;   VERSION_NUMERIC  a strict X.X.X.X numeric version derived from
+;                    VERSION (prerelease/build suffixes stripped, padded
+;                    to 4 components) — VIProductVersion requires this
+;                    exact format and rejects suffixes like "-alpha.6".
+;   STAGE_DIR        absolute path to the PyInstaller one-dir build to
+;                    bundle (dist/set-ttrpg-portrait-launcher/, see
+;                    set-ttrpg-portrait-windows.spec)
+;   ICON_FILE        absolute path to packaging/windows/icon.ico
+;   OUT_FILE         absolute path the finished installer .exe is written to
 ;
 ; Installs per-user (no admin/UAC elevation needed) to
 ; %LOCALAPPDATA%\Programs\set-ttrpg-portrait, matching the same
@@ -29,7 +35,7 @@ InstallDirRegKey HKCU "Software\set-ttrpg-portrait" "InstallDir"
 RequestExecutionLevel user
 Icon "${ICON_FILE}"
 UninstallIcon "${ICON_FILE}"
-VIProductVersion "${VERSION}.0"
+VIProductVersion "${VERSION_NUMERIC}"
 VIAddVersionKey "ProductName" "set-ttrpg-portrait"
 VIAddVersionKey "ProductVersion" "${VERSION}"
 VIAddVersionKey "FileVersion" "${VERSION}"

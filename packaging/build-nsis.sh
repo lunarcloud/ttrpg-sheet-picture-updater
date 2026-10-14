@@ -16,8 +16,9 @@
 # set up — see packaging/README.md):
 #   ./packaging/build-nsis.sh
 #
-# Requires: makensis (NSIS). Already preinstalled on GitHub's
-# windows-latest runners; for local builds, see fetch_makensis in
+# Requires: makensis (NSIS). NOT preinstalled on GitHub's windows-latest
+# runners — release.yml's build-windows-installer job installs it via
+# Chocolatey. For local builds, see fetch_makensis in
 # packaging/lib/fetch-tools.sh, or install NSIS yourself from
 # https://nsis.sourceforge.io/.
 set -euo pipefail
@@ -64,8 +65,22 @@ echo "Building the combined CLI+GUI launcher .exe with PyInstaller..."
 mkdir -p "$OUT_DIR"
 OUT_FILE="$OUT_DIR/set-ttrpg-portrait-${VERSION}-x64-setup.exe"
 
+# NSIS's VIProductVersion requires a strict X.X.X.X numeric format and
+# rejects prerelease/build suffixes (e.g. "2.0.0-alpha.6" fails outright)
+# — so derive a separate, display-free numeric version just for that
+# field: strip anything from the first non-digit/non-dot character, then
+# pad (or truncate) to exactly 4 dot-separated numeric components.
+version_digits="$(echo "$VERSION" | grep -oE '^[0-9]+(\.[0-9]+)*' || true)"
+[ -n "$version_digits" ] || version_digits="0"
+IFS='.' read -ra version_parts <<< "$version_digits"
+while [ "${#version_parts[@]}" -lt 4 ]; do
+    version_parts+=("0")
+done
+VERSION_NUMERIC="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}.${version_parts[3]}"
+
 "$MAKENSIS" \
     "-DVERSION=$VERSION" \
+    "-DVERSION_NUMERIC=$VERSION_NUMERIC" \
     "-DSTAGE_DIR=$(cygpath -w "$REPO_ROOT/dist/$LAUNCHER_NAME")" \
     "-DICON_FILE=$(cygpath -w "$SCRIPT_DIR/windows/icon.ico")" \
     "-DOUT_FILE=$(cygpath -w "$OUT_FILE")" \
