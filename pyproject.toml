@@ -9,7 +9,7 @@ requires-python = ">=3.10"
 dependencies = [
     "pikepdf==10.13.0.post1",
     "pillow==12.3.0",
-    "PyQt6==6.11.0",
+    "PyQt6==6.12.0",
     # Used by the GUI to render the sheet preview: Qt's own QtPdf/QPdfView
     # module doesn't render AcroForm field appearances (values or icons)
     # at all, so PyMuPDF renders each page to an image instead.
@@ -43,8 +43,8 @@ dev = [
     "pytest",
     "pytest-cov==7.1.0",
     "pyinstaller",
-    "ruff==0.17.0",
-    "mypy==2.4.0",
+    "ruff==0.17.3",
+    "mypy==2.4.1",
 ]
 
 [build-system]
