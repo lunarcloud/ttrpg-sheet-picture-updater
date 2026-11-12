@@ -50,14 +50,18 @@ jobs:
             libxcb-sync1 \
             libxcb-xfixes0 \
             libxcb-xinerama0 \
-            libxcb-xkb1 \
-            nsis
+            libxcb-xkb1
 
       - name: Create venv and install dependencies
         run: |
           python -m venv .venv
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -e ".[dev]"
+
+      - name: Fetch nfpm for MSI package validation
+        run: |
+          source packaging/lib/fetch-tools.sh
+          fetch_nfpm
 
       - name: Check formatting (ruff format)
         run: ./format.sh --check
@@ -71,7 +75,7 @@ jobs:
       - name: Type-check (mypy)
         run: ./typecheck.sh
 
-      - name: Validate packaging scripts (.spec/.nsi syntax)
+      - name: Validate packaging scripts and MSI config
         run: ./packaging/validate.sh
 
       - name: Run pytest (with coverage)

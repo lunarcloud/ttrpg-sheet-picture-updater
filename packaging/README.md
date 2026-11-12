@@ -1,4 +1,4 @@
-# Packaging: `.deb`, `.rpm`, AppImage, Windows installer, macOS `.dmg`
+# Packaging: `.deb`, `.rpm`, AppImage, Windows MSI, macOS `.dmg`
 
 Four different strategies, chosen per-format:
 
@@ -37,33 +37,23 @@ Four different strategies, chosen per-format:
   GL/EGL/Mesa and base X11). No distro package manager or system Python
   needed at all — this is the right choice for one-off/portable use, or
   distros the `.deb`/`.rpm` don't cover.
-- **Windows installer `.exe`** (via `build-nsis.sh`/
-  `set-ttrpg-portrait-windows.spec`/`packaging/windows/installer.nsi`)
+- **Windows installer `.msi`** (via `build-msi.sh`/
+  `set-ttrpg-portrait-windows.spec`/`nfpm-windows.yaml`)
   mirrors the AppImage's approach — a PyInstaller-frozen one-dir build of
   the same combined CLI+GUI launcher, just targeting Windows, wrapped into
-  a standard NSIS installer `.exe` via `makensis`.
+  an MSI via nfpm 2.49.0 or newer.
   - **Must be built on a native Windows host** (`.github/workflows/
     release.yml`'s `windows-latest` runner) — `pikepdf`'s platform-specific
     compiled wheel means the frozen `.exe` can't be cross-built from
-    Linux/macOS, same constraint as the AppImage. `makensis` itself is
-    NOT preinstalled on `windows-latest` runners, but Chocolatey is —
-    `release.yml`'s `build-windows-installer` job installs it via
-    `choco install nsis`. For local builds, see `fetch_makensis` in
-    `packaging/lib/fetch-tools.sh`, or install NSIS yourself from
-    <https://nsis.sourceforge.io/>.
+    Linux/macOS, same constraint as the AppImage. nfpm itself can create
+    the MSI on any platform, but this build runs it on Windows alongside
+    PyInstaller.
   - Installs per-user (to `%LOCALAPPDATA%\Programs\set-ttrpg-portrait`,
-    registry entries under `HKCU`) — no admin/UAC elevation required.
-  - **No signing**: this project previously shipped a `.msix`, but MSIX
-    packages must be signed even with a self-signed certificate, and
-    without a paid code-signing certificate, end users had to manually
-    import/trust an ephemeral self-signed one before Windows would even
-    install the package — a confusing, error-prone step. The NSIS `.exe`
-    is unsigned instead: end users just see a dismissable Windows
-    SmartScreen "Windows protected your PC" prompt the first time they run
-    it (click "More info" then "Run anyway") — no certificate import step
-    at all. If a paid code-signing certificate becomes available later,
-    `build-nsis.sh` could be extended to sign the output with
-    `signtool.exe`.
+    no admin/UAC elevation required) and adds a Start Menu shortcut.
+  - **Unsigned**: signing is optional in nfpm and is not configured here,
+    so no certificate is required to build the MSI. Windows may display an
+    unknown-publisher warning when users install it. A signing certificate
+    can be configured later through nfpm's MSI signature settings.
 - **macOS `.dmg`** (via `build-macos.sh`/`set-ttrpg-portrait-macos.spec`),
   **Apple Silicon (arm64) only — no Intel build is produced.** Like the
   AppImage/Windows installer, it's a PyInstaller-frozen one-dir build of the same
@@ -133,27 +123,21 @@ Four different strategies, chosen per-format:
 - **PyInstaller** — already an optional `dev` dependency in
   `pyproject.toml`, installed by `./setup.sh`. Only used for the AppImage.
 - **[`nfpm`](https://nfpm.goreleaser.com/)** — required by
-  `build-deb.sh`/`build-rpm.sh`. A single static Go binary, no
-  interpreter/package-manager dependency. Builds both `.deb` and `.rpm`
-  fully natively — no `rpmbuild`, Ruby, or other external tools needed.
+  `build-deb.sh`/`build-rpm.sh`/`build-msi.sh`. A single static Go binary,
+  no interpreter/package-manager dependency. Version 2.49.0 or newer is
+  needed for MSI support. Builds packages without external platform
+  packaging tools.
 - **`appimagetool`** — required by `build-appimage.sh`. Also a standalone
   binary; builds the final `.AppImage` from the `linuxdeploy`-populated
   `AppDir`.
 - **`linuxdeploy`** — also required by `build-appimage.sh`. Statically
   discovers and bundles the AppImage's missing system-library
   dependencies (see above).
-- **`makensis` (NSIS)** — required by `build-nsis.sh`. NOT preinstalled on
-  `windows-latest` CI runners; `release.yml`'s `build-windows-installer`
-  job installs it via Chocolatey (`choco install nsis`, also preinstalled
-  on those runners). For local Windows dev builds without choco, it's
-  fetched the same way as the other tools below (NSIS's "portable" zip,
-  no install step needed).
-
-All four tools are fetched on demand to `packaging/tools/` (gitignored,
+All three tools are fetched on demand to `packaging/tools/` (gitignored,
 never committed, never installed system-wide) — run `./setup.sh` from the
 repo root and answer "y" to the "Set up packaging tools too?" prompt, or run
 `packaging/lib/fetch-tools.sh`'s `fetch_nfpm`/`fetch_appimagetool`/
-`fetch_linuxdeploy`/`fetch_makensis` functions directly. The `build-*.sh`
+`fetch_linuxdeploy` functions directly. The `build-*.sh`
 scripts will tell you to do this if a tool is missing, rather than
 downloading it themselves mid-build.
 
@@ -166,7 +150,7 @@ From the repo root, with `.venv` set up (`./setup.sh`):
 ./packaging/build-rpm.sh        # -> dist/packages/set-ttrpg-portrait-<version>-1.x86_64.rpm
 ./packaging/build-appimage.sh   # -> dist/packages/set-ttrpg-portrait-<version>-x86_64.AppImage
 ./packaging/build-all.sh        # builds all three Linux artifacts above
-./packaging/build-nsis.sh       # -> dist/packages/set-ttrpg-portrait-<version>-x64-setup.exe (Windows only)
+./packaging/build-msi.sh        # -> dist/packages/set-ttrpg-portrait-<version>-x64.msi (Windows only)
 ./packaging/build-macos.sh      # -> dist/packages/set-ttrpg-portrait-<version>-arm64.dmg (macOS arm64 only)
 ```
 

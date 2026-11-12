@@ -1,7 +1,7 @@
 name: Release
 
-# Builds the .deb/.rpm/AppImage/Windows-installer/macOS .dmg packages
-# (packaging/build-all.sh + build-nsis.sh + build-macos.sh), verifies the
+# Builds the .deb/.rpm/AppImage/Windows MSI/macOS .dmg packages
+# (packaging/build-all.sh + build-msi.sh + build-macos.sh), verifies the
 # .deb/.rpm actually install and run on real Debian/Fedora systems (see
 # "test-deb-install"/"test-rpm-install" below — this is the whole point of
 # packaging/nfpm.yaml's `depends` relying on those distros' own
@@ -180,24 +180,13 @@ jobs:
           .venv/Scripts/python.exe -m pip install --upgrade pip
           .venv/Scripts/python.exe -m pip install -e ".[dev]"
 
-      - name: Install NSIS
-        # NSIS isn't preinstalled on windows-latest runners (unlike
-        # InnoSetup/WiX) — Chocolatey is, though, so use that rather than
-        # fetch_makensis's portable-zip fallback (meant for local dev
-        # builds without choco — see packaging/lib/fetch-tools.sh).
-        # Appends to GITHUB_PATH explicitly rather than relying on
-        # choco's own env refresh, which doesn't propagate to the next
-        # step's fresh shell process.
-        shell: pwsh
+      - name: Fetch nfpm
         run: |
-          choco install nsis -y --no-progress
-          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          source packaging/lib/fetch-tools.sh
+          fetch_nfpm
 
-      - name: Build installer .exe
-        # Unsigned (no paid code-signing certificate), so end users see a
-        # dismissable SmartScreen "unknown publisher" prompt on first run
-        # — see packaging/README.md's Windows section.
-        run: ./packaging/build-nsis.sh
+      - name: Build installer .msi
+        run: ./packaging/build-msi.sh
 
       - name: Upload built installer as a workflow artifact
         uses: actions/upload-artifact@v7
@@ -276,4 +265,3 @@ jobs:
         run: gh release upload "$GITHUB_REF_NAME" dist/packages/* --clobber --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ github.token }}
-

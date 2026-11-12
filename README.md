@@ -126,8 +126,8 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
 
 1. `./setup.sh` — creates `.venv` and installs this project editable with
    its `dev` extra (`pip install -e ".[dev]"`, from `pyproject.toml`). It
-   will also optionally offer to fetch `nfpm`/`appimagetool`/`linuxdeploy`/
-   `makensis` (standalone binaries, cached in `packaging/tools/`, never
+   will also optionally offer to fetch `nfpm`/`appimagetool`/`linuxdeploy`
+   (standalone binaries, cached in `packaging/tools/`, never
    installed system-wide) if you plan to build `.deb`/`.rpm`/AppImage/
    Windows-installer packages — only needed for release builds, not
    everyday development.
@@ -142,10 +142,9 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
 4. `./typecheck.sh` — type-checks `set_ttrpg_portrait/` with `mypy`.
 
 5. `./packaging/validate.sh` — validates the PyInstaller `.spec` files and
-   `packaging/windows/installer.nsi` (syntax-only; doesn't need a native
-   Windows host, just `makensis` — see `./setup.sh` above) without doing a
-   full platform-specific build. Skips the `installer.nsi` check with a
-   warning if `makensis` isn't installed locally; CI always has it.
+   builds a throwaway MSI from the nfpm config, without doing a full
+   platform-specific build. The MSI check is skipped with a warning if nfpm
+   isn't installed locally; CI fetches the pinned version.
 
 6. `./package-updates.sh` — checks pinned dependency versions for updates:
    the pip packages in `pyproject.toml` (also covered automatically, on a

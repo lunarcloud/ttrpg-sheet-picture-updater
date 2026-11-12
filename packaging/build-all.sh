@@ -4,7 +4,7 @@
 # design rationale. Each build-*.sh script freezes its own PyInstaller
 # binary, so they can also be run individually.
 #
-# Does NOT include the Windows installer (build-nsis.sh) — that must run
+# Does NOT include the Windows installer (build-msi.sh) — that must run
 # on a native Windows host (pikepdf's compiled-wheel constraint), so it's a
 # separate CI job/script rather than part of this Linux-only aggregate.
 set -euo pipefail

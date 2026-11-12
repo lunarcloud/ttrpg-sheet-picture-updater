@@ -76,7 +76,8 @@ contents:
 # plain list of strings passed straight to dpkg/rpm — see nfpm's own
 # jsonschema, `$defs.Overridables.properties.depends`), so the same
 # Python package needs a different declared system-package name per format.
-# (Windows is not built with nfpm — see build-nsis.sh/packaging/README.md.)
+# Windows uses a separate nfpm config because it packages the frozen
+# application as an MSI — see nfpm-windows.yaml and packaging/README.md.
 
 overrides:
   deb:
@@ -95,4 +96,3 @@ overrides:
       - python3-pillow # Pillow
       - python3-PyMuPDF # pymupdf (a.k.a. fitz), used for the GUI's sheet preview
       - python3-cairosvg # cairosvg, used to rasterize SVG portraits
-
