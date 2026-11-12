@@ -29,9 +29,8 @@ APP_ICON_NAME = "set-ttrpg-portrait.png"
 # Size used for the AppImage's own icon.
 APPIMAGE_ICON_SIZE = 256
 
-# Windows .ico embedded in the PyInstaller-frozen .exe and the NSIS
-# installer/uninstaller (multi-resolution, matching what Windows Explorer/
-# taskbar request at different DPIs).
+# Windows .ico embedded in the PyInstaller-frozen .exe (multi-resolution,
+# matching what Windows Explorer/taskbar request at different DPIs).
 ICO_SIZES = (16, 32, 48, 64, 128, 256)
 
 # macOS .iconset source sizes — Apple's required name/size pairs for
@@ -79,7 +78,7 @@ def generate_appimage_icon(source: Image.Image) -> None:
 
 def generate_windows_ico(source: Image.Image) -> None:
     """Multi-resolution .ico embedded in the Windows build's PyInstaller
-    .exe and the NSIS installer/uninstaller (build-nsis.sh)."""
+    executable."""
     out_dir = PACKAGING_DIR / "windows"
     out_dir.mkdir(parents=True, exist_ok=True)
     source.save(out_dir / "icon.ico", format="ICO", sizes=[(s, s) for s in ICO_SIZES])

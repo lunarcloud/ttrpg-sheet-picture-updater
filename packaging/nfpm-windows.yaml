@@ -1,0 +1,26 @@
+name: set-ttrpg-portrait
+version: ${VERSION}
+arch: amd64
+maintainer: lunarcloud
+vendor: lunarcloud
+description: Embed a portrait image into a fillable TTRPG character sheet PDF.
+homepage: https://github.com/lunarcloud/ttrpg-sheet-picture-updater
+license: MIT
+
+contents:
+  - src: dist/set-ttrpg-portrait-launcher/
+    dst: /
+    type: tree
+
+msi:
+  product_name: Set TTRPG Portrait
+  manufacturer: lunarcloud
+  install_dir: set-ttrpg-portrait
+  per_user: true
+  minimal_ui: true
+  file_versions:
+    /set-ttrpg-portrait-launcher.exe: ""
+  shortcuts:
+    - name: Set TTRPG Portrait
+      target: /set-ttrpg-portrait-launcher.exe
+      description: Embed a portrait image into a fillable TTRPG character sheet PDF.

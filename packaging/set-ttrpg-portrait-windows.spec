@@ -1,5 +1,5 @@
-# PyInstaller spec for a reproducible one-dir build of the Windows NSIS
-# installer's combined CLI+GUI launcher binary (set-ttrpg-portrait-launcher.exe).
+# PyInstaller spec for a reproducible one-dir build of the Windows MSI's
+# combined CLI+GUI launcher binary (set-ttrpg-portrait-launcher.exe).
 #
 # Must run on a native Windows host (pikepdf ships platform-specific
 # compiled wheels — see packaging/README.md's "Build natively per

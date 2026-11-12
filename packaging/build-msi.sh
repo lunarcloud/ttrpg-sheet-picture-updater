@@ -1,26 +1,16 @@
 #!/usr/bin/env bash
-# Builds a Windows installer .exe (NSIS), bundling a PyInstaller-frozen
+# Builds a Windows installer .msi with nfpm, bundling a PyInstaller-frozen
 # one-dir build of the combined CLI+GUI launcher (see
 # set-ttrpg-portrait-windows.spec and set_ttrpg_portrait/launcher.py).
 #
-# Replaces the earlier .msix approach — see packaging/README.md's Windows
-# section for the rationale: MSIX requires signing, and without a paid
-# code-signing certificate end users had to manually import/trust an
-# ephemeral self-signed one before Windows would even install the
-# package. An unsigned NSIS .exe only triggers a dismissable SmartScreen
-# "unknown publisher" prompt (click "More info" > "Run anyway") — no
-# certificate import required, same tradeoff as the ad-hoc-signed macOS
-# .dmg's Gatekeeper prompt.
+# Must run on a native Windows host (pikepdf ships platform-specific
+# compiled wheels — see packaging/README.md).
 #
 # Usage (from repo root, in Git Bash on Windows, with the project .venv
 # set up — see packaging/README.md):
-#   ./packaging/build-nsis.sh
+#   ./packaging/build-msi.sh
 #
-# Requires: makensis (NSIS). NOT preinstalled on GitHub's windows-latest
-# runners — release.yml's build-windows-installer job installs it via
-# Chocolatey. For local builds, see fetch_makensis in
-# packaging/lib/fetch-tools.sh, or install NSIS yourself from
-# https://nsis.sourceforge.io/.
+# Requires nfpm 2.49.0 or newer (fetchable via ./setup.sh).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,18 +26,17 @@ source "$SCRIPT_DIR/lib/fetch-tools.sh"
 case "$(uname -s)" in
     MINGW* | MSYS* | CYGWIN*) ;;
     *)
-        echo "Error: build-nsis.sh must run on a native Windows host (Git Bash)." >&2
+        echo "Error: build-msi.sh must run on a native Windows host (Git Bash)." >&2
         echo "pikepdf ships platform-specific compiled wheels, so the frozen .exe" >&2
         echo "can't be cross-built from Linux/macOS — see packaging/README.md." >&2
         exit 1
         ;;
 esac
 
-MAKENSIS="$(resolve_makensis)"
-if [ -z "$MAKENSIS" ]; then
-    echo "Error: 'makensis' not found. Run ./setup.sh and answer 'y' to the" >&2
-    echo "packaging-tools prompt (or install NSIS yourself from" >&2
-    echo "https://nsis.sourceforge.io/ and put makensis on PATH)." >&2
+NFPM="$(resolve_nfpm)"
+if [ -z "$NFPM" ]; then
+    echo "Error: 'nfpm' not found. Run ./setup.sh and answer 'y' to the" >&2
+    echo "packaging-tools prompt (or install nfpm yourself and put it on PATH)." >&2
     exit 1
 fi
 
@@ -84,27 +73,13 @@ else
 fi
 
 mkdir -p "$OUT_DIR"
-OUT_FILE="$OUT_DIR/set-ttrpg-portrait-${VERSION}-x64-setup.exe"
+OUT_FILE="$OUT_DIR/set-ttrpg-portrait-${VERSION}-x64.msi"
 
-# NSIS's VIProductVersion requires a strict X.X.X.X numeric format and
-# rejects prerelease/build suffixes (e.g. "2.0.0-alpha.6" fails outright)
-# — so derive a separate, display-free numeric version just for that
-# field: strip anything from the first non-digit/non-dot character, then
-# pad (or truncate) to exactly 4 dot-separated numeric components.
-version_digits="$(echo "$VERSION" | grep -oE '^[0-9]+(\.[0-9]+)*' || true)"
-[ -n "$version_digits" ] || version_digits="0"
-IFS='.' read -ra version_parts <<< "$version_digits"
-while [ "${#version_parts[@]}" -lt 4 ]; do
-    version_parts+=("0")
-done
-VERSION_NUMERIC="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}.${version_parts[3]}"
-
-"$MAKENSIS" \
-    "-DVERSION=$VERSION" \
-    "-DVERSION_NUMERIC=$VERSION_NUMERIC" \
-    "-DSTAGE_DIR=$(cygpath -w "$REPO_ROOT/dist/$LAUNCHER_NAME")" \
-    "-DICON_FILE=$(cygpath -w "$SCRIPT_DIR/windows/icon.ico")" \
-    "-DOUT_FILE=$(cygpath -w "$OUT_FILE")" \
-    "$SCRIPT_DIR/windows/installer.nsi"
+# nfpm resolves contents[].src relative to its working directory.
+export VERSION
+(cd "$REPO_ROOT" && "$NFPM" package \
+    --config "$SCRIPT_DIR/nfpm-windows.yaml" \
+    --packager msi \
+    --target "$OUT_FILE")
 
 echo "Built $OUT_FILE"

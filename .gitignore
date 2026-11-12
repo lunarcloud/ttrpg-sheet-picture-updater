@@ -387,7 +387,6 @@ ignore/
 !packaging/set-ttrpg-portrait-macos.spec
 !packaging/lib/
 !packaging/lib/*.sh
-!packaging/windows/installer.nsi
 packaging/icons/
 packaging/appimage/icon.png
 packaging/windows/icon.ico
