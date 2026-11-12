@@ -36,9 +36,11 @@ echo
 echo "Building a throwaway MSI from the Windows package config..."
 FAKE_STAGE_DIR="$(mktemp -d)"
 trap 'rm -rf "$FAKE_STAGE_DIR"' EXIT
-printf 'synthetic executable payload\n' > "$FAKE_STAGE_DIR/set-ttrpg-portrait-launcher.exe"
+STAGE_CONTENTS="$FAKE_STAGE_DIR/stage"
+mkdir "$STAGE_CONTENTS"
+printf 'synthetic executable payload\n' > "$STAGE_CONTENTS/set-ttrpg-portrait-launcher.exe"
 TEMP_CONFIG="$FAKE_STAGE_DIR/nfpm-windows.yaml"
-sed "s|src: dist/set-ttrpg-portrait-launcher/|src: $FAKE_STAGE_DIR|" \
+sed "s|src: dist/set-ttrpg-portrait-launcher/|src: $STAGE_CONTENTS|" \
     "$SCRIPT_DIR/nfpm-windows.yaml" > "$TEMP_CONFIG"
 VERSION="0.0.0"
 export VERSION
