@@ -32,6 +32,16 @@ if [ -z "$NFPM" ]; then
     exit 0
 fi
 
+NFPM_ACTUAL_VERSION="$("$NFPM" --version 2>&1 | sed -nE 's/.*GitVersion:[[:space:]]*v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' | head -n 1)"
+if [ -z "$NFPM_ACTUAL_VERSION" ]; then
+    echo "Error: could not determine nfpm version from '$NFPM --version'." >&2
+    exit 1
+fi
+if ! nfpm_version_at_least "$NFPM_ACTUAL_VERSION" "$NFPM_VERSION"; then
+    echo "Error: nfpm $NFPM_VERSION or newer is required for MSI validation; found $NFPM_ACTUAL_VERSION." >&2
+    exit 1
+fi
+
 echo
 echo "Building a throwaway MSI from the Windows package config..."
 FAKE_STAGE_DIR="$(mktemp -d)"

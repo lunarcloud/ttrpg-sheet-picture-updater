@@ -100,6 +100,30 @@ resolve_nfpm() {
     fi
 }
 
+nfpm_version_at_least() {
+    local actual="$1"
+    local minimum="$2"
+    local actual_part minimum_part
+    local index
+    local -a actual_parts minimum_parts
+
+    [[ "$actual" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 2
+    [[ "$minimum" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 2
+    IFS=. read -r -a actual_parts <<< "$actual"
+    IFS=. read -r -a minimum_parts <<< "$minimum"
+
+    for index in 0 1 2; do
+        actual_part=$((10#${actual_parts[index]}))
+        minimum_part=$((10#${minimum_parts[index]}))
+        if ((actual_part > minimum_part)); then
+            return 0
+        elif ((actual_part < minimum_part)); then
+            return 1
+        fi
+    done
+    return 0
+}
+
 resolve_appimagetool() {
     if [ -x "$PACKAGING_TOOLS_DIR/appimagetool" ]; then
         echo "$PACKAGING_TOOLS_DIR/appimagetool"
