@@ -154,12 +154,13 @@ python set_ttrpg_portrait.py my_character_sheet.pdf my_photo.jpg --field "Portra
    plain bash variables, not a manifest file. Add `--update` to rewrite
    outdated pins in place.
 
-7. `./test.sh` — regenerates synthetic test fixtures (see point 8) and runs
-   the pytest suite with coverage reporting. Extra args pass through to
-   pytest, e.g. `./test.sh -k fields`.
+7. `./test.sh` — runs the pytest suite against the committed synthetic
+   fixtures with coverage reporting. Extra args pass through to pytest,
+   e.g. `./test.sh -k fields`. This does not rewrite fixture files.
 
-8. Regenerate synthetic test fixtures after changing `tests/fixtures/`
-   generation logic: `.venv/bin/python tests/fixtures/generate_fixtures.py`.
+8. Regenerate synthetic test fixtures only when intentionally changing
+   `tests/fixtures/` generation logic:
+   `.venv/bin/python tests/fixtures/generate_fixtures.py`.
    
 9. All automated tests use the synthetic, IP-free fixtures under
    `tests/fixtures/` — never commit or reference any real, copyrighted
